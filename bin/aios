@@ -363,6 +363,23 @@ def cmd_history(args) -> int:
     return 0
 
 
+def cmd_config(_args) -> int:
+    base = os.environ.get("XDG_CONFIG_HOME") or os.path.join(os.path.expanduser("~"), ".config")
+    path = os.environ.get("AIOS_CONFIG") or os.path.join(base, "aios", "config.toml")
+    exists = os.path.exists(path)
+    print(f"config file: {path}")
+    print(f"             {'found' if exists else 'not present (using defaults + environment)'}")
+    print("precedence:  defaults < config file < environment variables\n")
+    code, body = request("GET", "/config", timeout=8)
+    if code is None or code >= 400:
+        print("(start the daemon with `make run` to see effective settings)", file=sys.stderr)
+        return 0 if code is None else 1
+    print("effective settings (from the running daemon):")
+    for key in sorted(body):
+        print(f"  {key} = {body[key]}")
+    return 0
+
+
 def cmd_tools(_args) -> int:
     code, body = request("GET", "/v1/tools", timeout=8)
     if code is None or code >= 400:
@@ -398,6 +415,7 @@ def main(argv=None) -> int:
     sub.add_parser("status", help="daemon + backend health").set_defaults(func=cmd_status)
     sub.add_parser("sessions", help="list saved chat sessions").set_defaults(func=cmd_sessions)
     sub.add_parser("tools", help="list available tools").set_defaults(func=cmd_tools)
+    sub.add_parser("config", help="show config file + effective settings").set_defaults(func=cmd_config)
 
     history = sub.add_parser("history", help="print a session's transcript")
     history.add_argument("session", help="session id")

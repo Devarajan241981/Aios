@@ -22,7 +22,8 @@ The differentiator, buildable now with zero OS work.
 - [x] Conversation persistence — named, resumable sessions in local SQLite
 - [x] Hardening: bearer-token auth, structured logging, body limits, `/version`
 - [x] Packaging: `pyproject.toml` + `aiosd` console entry point
-- [ ] Config file (`~/.config/aios/config.toml`) in addition to env vars
+- [x] Config file (`~/.config/aios/config.toml`, TOML) with defaults<file<env
+      precedence, an `aios config` command, and a `/config` endpoint
 
 **Exit criteria:** you use `aios` daily on your Mac for real questions.
 

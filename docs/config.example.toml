@@ -1,0 +1,28 @@
+# AIOS configuration — copy to ~/.config/aios/config.toml and edit.
+#
+# Precedence:  built-in defaults  <  this file  <  environment variables.
+# Keys mirror the AIOS_* environment variables, lowercased, without the prefix
+# (e.g. AIOS_MODEL -> model, AIOS_ALLOWED_ROOTS -> allowed_roots). A flat file
+# (as below) or an [aios] table both work.
+
+# --- daemon ---------------------------------------------------------------
+# host = "127.0.0.1"          # keep on loopback
+# port = 8765
+# log_level = "INFO"
+# token = ""                  # set to require Authorization: Bearer <token>
+
+# --- model backend --------------------------------------------------------
+# backend = "ollama"          # "ollama" (local server) or "mock" (offline)
+# model = "llama3.2"
+# ollama_url = "http://127.0.0.1:11434"
+
+# --- semantic memory ------------------------------------------------------
+# rag = true                  # ground answers in your indexed files
+# embeddings = "hashing"      # "hashing" (offline, zero-download) or "ollama"
+# embed_model = "nomic-embed-text"
+# rag_topk = 4
+
+# --- tools ----------------------------------------------------------------
+# tools = true
+# allowed_roots = ["/home/me/projects"]   # extra dirs tools may read/write (home always ok)
+# allowed_commands = ["git", "rg"]         # extra commands run_command may execute

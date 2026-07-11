@@ -7,7 +7,9 @@ including semantic search (the default embedder needs no model or network).
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
+import sys
+import tomllib
+from dataclasses import asdict, dataclass, field
 
 
 def _truthy(value: str) -> bool:
@@ -58,7 +60,9 @@ class Config:
         roots = env.get("AIOS_ALLOWED_ROOTS", "")
         allowed = tuple(p for p in (r.strip() for r in roots.split(os.pathsep)) if p)
         cmds = env.get("AIOS_ALLOWED_COMMANDS", "")
-        allowed_cmds = tuple(c for c in cmds.replace(",", " ").split() if c)
+        allowed_cmds = tuple(
+            c for c in cmds.replace(",", " ").replace(os.pathsep, " ").split() if c
+        )
         return cls(
             host=env.get("AIOS_HOST", cls.host),
             port=int(env.get("AIOS_PORT", cls.port)),
@@ -80,3 +84,52 @@ class Config:
             log_level=env.get("AIOS_LOG_LEVEL", cls.log_level).upper(),
             max_body_bytes=int(env.get("AIOS_MAX_BODY_BYTES", cls.max_body_bytes)),
         )
+
+    def redacted_dict(self) -> dict:
+        """A JSON-safe view of settings with the secret token removed."""
+        data = asdict(self)
+        data["allowed_roots"] = list(self.allowed_roots)
+        data["allowed_commands"] = list(self.allowed_commands)
+        data.pop("token", None)
+        data["token_set"] = bool(self.token)
+        return data
+
+
+def _config_path_from(env) -> str:
+    base = env.get("XDG_CONFIG_HOME") or os.path.join(os.path.expanduser("~"), ".config")
+    return os.path.join(base, "aios", "config.toml")
+
+
+def _read_toml_env(path: str) -> dict:
+    """Read a TOML config file into AIOS_* env-style keys. Never raises."""
+    try:
+        with open(path, "rb") as fh:
+            data = tomllib.load(fh)
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        print(f"aiosd: ignoring invalid config {path}: {exc}", file=sys.stderr)
+        return {}
+    if isinstance(data.get("aios"), dict):  # allow either a flat file or an [aios] table
+        data = data["aios"]
+    out = {}
+    for key, value in data.items():
+        if not isinstance(key, str):
+            continue
+        name = "AIOS_" + key.upper()
+        if isinstance(value, bool):
+            out[name] = "true" if value else "false"
+        elif isinstance(value, (list, tuple)):
+            out[name] = os.pathsep.join(str(v) for v in value)
+        else:
+            out[name] = str(value)
+    return out
+
+
+def load_config(env: dict | None = None, path: str | None = None) -> Config:
+    """Build a Config from defaults < config file < environment variables."""
+    env = os.environ if env is None else env
+    if path is None:
+        path = env.get("AIOS_CONFIG") or _config_path_from(env)
+    file_env = _read_toml_env(path) if path and os.path.exists(path) else {}
+    merged = dict(file_env)
+    merged.update(env)  # environment variables win over the file
+    return Config.from_env(merged)

@@ -58,6 +58,14 @@ class TestSessionsAndTools(unittest.TestCase):
         self.assertEqual(code, 200)
         self.assertIn("version", body)
 
+    def test_config_endpoint_is_sanitized(self):
+        code, body = self.c.call("GET", "/config")
+        self.assertEqual(code, 200)
+        self.assertIn("port", body)
+        self.assertIn("model", body)
+        self.assertNotIn("token", body)     # secret never exposed
+        self.assertIn("token_set", body)
+
     def test_tools_listed(self):
         code, body = self.c.call("GET", "/v1/tools")
         self.assertEqual(code, 200)

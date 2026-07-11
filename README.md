@@ -118,7 +118,13 @@ for *why* it's built this way.
 
 ## Configuration
 
-All via environment variables (local-first defaults):
+Settings resolve as **defaults < `~/.config/aios/config.toml` < environment
+variables**. Copy [docs/config.example.toml](docs/config.example.toml) to
+`~/.config/aios/config.toml` to make settings persistent (TOML keys mirror the
+env vars, lowercased, without the `AIOS_` prefix). Run `aios config` to see the
+file path and the daemon's effective settings.
+
+Every setting is also an environment variable (local-first defaults):
 
 | Variable | Default | Meaning |
 | --- | --- | --- |

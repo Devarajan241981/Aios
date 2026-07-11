@@ -34,7 +34,7 @@ from . import __version__
 from .agent import Agent
 from .assistant import Assistant
 from .backends import Backend, BackendError, make_backend
-from .config import Config
+from .config import Config, load_config
 from .embeddings import Embedder, EmbeddingError, make_embedder
 from .indexer import index_paths
 from .retriever import Retriever
@@ -163,6 +163,8 @@ def make_handler(state: AppState):
             elif self.path == "/version":
                 self._json(200, {"version": __version__,
                                  "python": platform.python_version()})
+            elif self.path == "/config":
+                self._json(200, cfg.redacted_dict())
             elif self.path == "/v1/index/stats":
                 self._json(200, {"documents": len(state.vector_store),
                                  "sources": state.vector_store.sources()})
@@ -359,7 +361,7 @@ def build_server(config) -> ThreadingHTTPServer:
 
 
 def serve(config=None):
-    config = config or Config.from_env()
+    config = config or load_config()
     logging.basicConfig(
         level=getattr(logging, config.log_level, logging.INFO),
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
