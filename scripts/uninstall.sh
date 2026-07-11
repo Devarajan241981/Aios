@@ -30,7 +30,8 @@ if command -v systemctl >/dev/null 2>&1; then
   run systemctl --user disable --now aiosd.service || true
 fi
 
-run rm -f "$BIN/aios" "$BIN/aios-shell" "$BIN/aios-session"
+run rm -f "$BIN/aios" "$BIN/aios-shell" "$BIN/aios-session" \
+          "$BIN/aios-overlay" "$BIN/aios-overlay-toggle"
 run rm -f "$UNIT_DIR/aiosd.service"
 run rm -rf "$CFG"
 

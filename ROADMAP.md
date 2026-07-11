@@ -55,8 +55,10 @@ on the M4 is the remaining step (see [docs/asahi-bringup.md](docs/asahi-bringup.
 - [x] Sway session config that autostarts `aiosd` and the shell
 - [x] `aiosd` hardened systemd **user** service + `install.sh`/`uninstall.sh`
 - [x] Login session entry (`aios.desktop`) + Asahi bring-up script
+- [x] Global hotkey (`Super+Space`) → assistant overlay over other apps
+      (Sway scratchpad + `aios overlay`, with its own persistent session)
 - [ ] Boot Asahi Linux on the M4 and run the bring-up (needs hardware)
-- [ ] Native panel/launcher + global hotkey → assistant overlay over other apps
+- [ ] Native panel/launcher (status bar, app launcher, workspaces)
 - [ ] Theming (light/dark, accent) beyond the current web UI
 
 **Exit criteria:** log into an AIOS session on the M4 and invoke the assistant

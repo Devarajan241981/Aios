@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# aios-overlay-toggle — summon or dismiss the AIOS overlay.
+# Launches it on first use, then toggles its scratchpad visibility. Bound to
+# Super+Space in the AIOS Sway session.
+set -euo pipefail
+
+APPID=aios-overlay
+
+if ! command -v swaymsg >/dev/null 2>&1; then
+  exec aios-overlay      # no Sway IPC; just launch it
+fi
+
+if swaymsg -t get_tree | grep -q "\"app_id\": \"$APPID\""; then
+  swaymsg "[app_id=\"$APPID\"] scratchpad show" >/dev/null
+else
+  aios-overlay &
+fi

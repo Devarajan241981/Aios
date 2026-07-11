@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# aios-overlay — launch the AIOS assistant overlay: a small floating terminal
+# running `aios overlay`. Given a stable app_id so the Sway rules can float,
+# center, and scratchpad it. Toggled by aios-overlay-toggle (Super+Space).
+set -euo pipefail
+
+APPID=aios-overlay
+
+if command -v foot >/dev/null 2>&1; then
+  exec foot --app-id="$APPID" --title="AIOS" aios overlay
+elif command -v alacritty >/dev/null 2>&1; then
+  exec alacritty --class "$APPID" -T AIOS -e aios overlay
+elif command -v kitty >/dev/null 2>&1; then
+  exec kitty --class "$APPID" -T AIOS aios overlay
+elif command -v xterm >/dev/null 2>&1; then
+  exec xterm -class "$APPID" -T AIOS -e aios overlay
+else
+  echo "aios-overlay: no terminal emulator found (install foot/alacritty/kitty)." >&2
+  exit 1
+fi

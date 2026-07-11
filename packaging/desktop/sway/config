@@ -31,6 +31,12 @@ bindsym $mod+Shift+e exec swaymsg exit
 bindsym $mod+f fullscreen toggle
 floating_modifier $mod normal
 
+### AIOS assistant overlay -------------------------------------------------
+# Super+Space summons the assistant over whatever you're doing (Ctrl-D hides).
+for_window [app_id="aios-overlay"] floating enable, resize set 760 520, \
+    move position center, move to scratchpad, scratchpad show
+bindsym $mod+space exec aios-overlay-toggle
+
 ### Input ------------------------------------------------------------------
 input type:touchpad {
     tap enabled

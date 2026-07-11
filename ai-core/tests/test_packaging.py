@@ -7,6 +7,8 @@ REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 SHELL_SCRIPTS = [
     "packaging/desktop/aios-shell",
     "packaging/desktop/aios-session",
+    "packaging/desktop/aios-overlay",
+    "packaging/desktop/aios-overlay-toggle",
     "scripts/install.sh",
     "scripts/uninstall.sh",
     "scripts/asahi-bringup.sh",
@@ -60,6 +62,16 @@ class TestPackagingContent(unittest.TestCase):
         cfg = _read("packaging/desktop/sway/config")
         self.assertIn("aiosd.service", cfg)
         self.assertIn("aios-shell", cfg)
+
+    def test_sway_binds_overlay_hotkey(self):
+        cfg = _read("packaging/desktop/sway/config")
+        self.assertIn("$mod+space", cfg)
+        self.assertIn("aios-overlay-toggle", cfg)
+
+    def test_overlay_launcher_runs_overlay(self):
+        launcher = _read("packaging/desktop/aios-overlay")
+        self.assertIn("aios overlay", launcher)
+        self.assertIn("aios-overlay", launcher)  # stable app_id
 
     def test_desktop_entry_runs_session(self):
         entry = _read("packaging/desktop/aios.desktop")

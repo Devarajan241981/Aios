@@ -133,10 +133,33 @@ def cmd_status(_args) -> int:
     return 0 if body.get("status") == "ok" else 1
 
 
-def _ask_with_tools(prompt: str, auto_approve: bool) -> int:
+def _stream_prompt(prompt: str, session=None, history=None) -> str:
+    """Stream a reply to stdout as it arrives; return the full text."""
+    payload = {"prompt": prompt}
+    if session:
+        payload["session_id"] = session
+    elif history is not None:
+        payload["history"] = history
+    parts: list[str] = []
+    try:
+        for evt in stream_request("/v1/chat", payload):
+            if "delta" in evt:
+                sys.stdout.write(evt["delta"])
+                sys.stdout.flush()
+                parts.append(evt["delta"])
+            elif "error" in evt:
+                sys.stderr.write("\n" + evt["error"] + "\n")
+    except urllib.error.URLError as exc:
+        sys.stderr.write(f"\ncannot reach aiosd at {base_url()}: {exc.reason}\n")
+    return "".join(parts)
+
+
+def _ask_with_tools(prompt: str, auto_approve: bool, session=None) -> int:
     approved: list[str] = []
     for _round in range(8):
         payload = {"prompt": prompt, "use_tools": True, "approve": auto_approve}
+        if session:
+            payload["session_id"] = session
         if approved:
             payload["approved_signatures"] = approved
         code, body = request("POST", "/v1/chat", payload, timeout=600)
@@ -266,6 +289,35 @@ def cmd_chat(args) -> int:
     return 0
 
 
+def cmd_overlay(args) -> int:
+    """Compact assistant loop, purpose-built for the desktop overlay window."""
+    session = args.session or "overlay"
+    dim, mag, cyan, reset = "\033[2m", "\033[1;35m", "\033[36m", "\033[0m"
+    sys.stdout.write(f"{dim}AIOS · ask anything · prefix '!' to use tools · Ctrl-D to hide{reset}\n")
+    while True:
+        try:
+            line = input(f"{mag}› {reset}").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return 0
+        if line in ("exit", "quit"):
+            return 0
+        if not line:
+            continue
+        use_tools = args.tools or line.startswith("!")
+        if line.startswith("!"):
+            line = line[1:].strip()
+        if not line:
+            continue
+        if use_tools:
+            _ask_with_tools(line, auto_approve=args.approve, session=session)
+        else:
+            sys.stdout.write(cyan)
+            _stream_prompt(line, session=session)
+            sys.stdout.write(reset + "\n\n")
+    return 0
+
+
 def _fmt_time(ts) -> str:
     import datetime
     return datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M")
@@ -321,6 +373,12 @@ def main(argv=None) -> int:
     chat = sub.add_parser("chat", help="interactive chat session")
     chat.add_argument("--session", help="named session; persists and resumes history")
     chat.set_defaults(func=cmd_chat)
+
+    overlay = sub.add_parser("overlay", help="compact assistant loop for the desktop overlay")
+    overlay.add_argument("--session", help="session id (default: 'overlay')")
+    overlay.add_argument("--tools", action="store_true", help="use tools for every message")
+    overlay.add_argument("--approve", action="store_true", help="auto-approve mutating tools")
+    overlay.set_defaults(func=cmd_overlay)
 
     sub.add_parser("status", help="daemon + backend health").set_defaults(func=cmd_status)
     sub.add_parser("sessions", help="list saved chat sessions").set_defaults(func=cmd_sessions)
