@@ -25,5 +25,11 @@ ask: ## Ask a one-off question: make ask Q="how do I ..."
 lint: ## Byte-compile all sources as a quick sanity check
 	$(PY) -m compileall -q ai-core/aiosd bin/aios
 
+install: ## User-level install (CLI, daemon service, desktop session)
+	./scripts/install.sh
+
+install-dry: ## Preview the install without changing anything
+	./scripts/install.sh --dry-run
+
 clean: ## Remove caches
 	find . -type d -name __pycache__ -prune -exec rm -rf {} +

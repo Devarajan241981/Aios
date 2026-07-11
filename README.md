@@ -154,10 +154,27 @@ ai-core/aiosd/     the daemon, organized by subsystem:
 ai-core/tests/     offline unittest suite (87 tests, mock backend)
 ai-core/pyproject.toml   packaging (aiosd console script)
 bin/aios           the CLI client
-docs/              architecture + decision records (ADR-0001, ADR-0002)
+docs/              architecture + decision records (ADR-0001, ADR-0002) + Asahi bring-up
 packaging/systemd/ hardened user service unit for the Linux target
+packaging/desktop/ Sway session, aios-shell/aios-session, login-session entry
+scripts/           install.sh / uninstall.sh / asahi-bringup.sh
 .github/workflows/ CI (tests on Python 3.11–3.13)
 ```
+
+## Running AIOS as a desktop (Apple Silicon / Asahi Linux)
+
+Phase 3 turns a MacBook into an AIOS machine: `aiosd` runs as a systemd user
+service and the web UI is the fullscreen shell under a minimal Sway session.
+
+```bash
+# on Fedora Asahi Remix, from a checkout of this repo:
+./scripts/asahi-bringup.sh --dry-run    # preview every step
+./scripts/asahi-bringup.sh              # install session deps + AIOS
+# then log out and pick the "AIOS" session, or run: aios-session
+```
+
+The bring-up scripts and session config are written and syntax-checked here; the
+final run happens on the M4. Full guide: [docs/asahi-bringup.md](docs/asahi-bringup.md).
 
 ## License
 

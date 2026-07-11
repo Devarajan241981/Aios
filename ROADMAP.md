@@ -43,16 +43,21 @@ Turn the assistant from stateless chat into something that knows *your* stuff.
 **Exit criteria:** ask about your own notes and get grounded answers, offline. ✅
 (Basic version reached — dense-embedding quality + encryption still to come.)
 
-## Phase 3 — The desktop shell (Linux target)
+## Phase 3 — The desktop shell (Linux target, ⏳ tooling ready)
 
-Bring up AIOS as an actual desktop. This is where we move to hardware.
+Bring up AIOS as an actual desktop. This is where we move to hardware. The
+bring-up tooling and a first shell are written and syntax-checked; running them
+on the M4 is the remaining step (see [docs/asahi-bringup.md](docs/asahi-bringup.md)).
 
-- [ ] Boot Asahi Linux (Fedora Asahi Remix) on the MacBook Air M4
-- [ ] Choose the compositor base: **Sway/wlroots** (simplest, most stable) first
-- [ ] Minimal panel + launcher with an "Ask AIOS" surface calling `aiosd`
-- [ ] Global hotkey → assistant overlay
-- [ ] `aiosd` as a hardened systemd **user** service (unit already in `packaging/`)
-- [ ] Theming (light/dark, accent) following the UI guidelines in the architecture doc
+- [x] Compositor base chosen: **Sway/wlroots** (simplest, most stable)
+- [x] Web UI as the shell (self-contained page served by `aiosd`)
+- [x] Session tooling: `aios-session` (starts Sway) + `aios-shell` (kiosk browser)
+- [x] Sway session config that autostarts `aiosd` and the shell
+- [x] `aiosd` hardened systemd **user** service + `install.sh`/`uninstall.sh`
+- [x] Login session entry (`aios.desktop`) + Asahi bring-up script
+- [ ] Boot Asahi Linux on the M4 and run the bring-up (needs hardware)
+- [ ] Native panel/launcher + global hotkey → assistant overlay over other apps
+- [ ] Theming (light/dark, accent) beyond the current web UI
 
 **Exit criteria:** log into an AIOS session on the M4 and invoke the assistant
 from anywhere.

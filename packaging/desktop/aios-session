@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# aios-session — entry point for the AIOS Wayland session. Started by the display
+# manager (via aios.desktop) or run directly from a TTY. Launches Sway with the
+# AIOS shell config, which in turn starts aiosd and the web-UI shell.
+set -euo pipefail
+
+export XDG_CURRENT_DESKTOP=AIOS:sway
+export MOZ_ENABLE_WAYLAND=1
+
+# Prefer a user-installed config, fall back to a system-wide one.
+CONFIG="${AIOS_SWAY_CONFIG:-}"
+if [ -z "$CONFIG" ]; then
+  if [ -f "$HOME/.config/aios/sway/config" ]; then
+    CONFIG="$HOME/.config/aios/sway/config"
+  else
+    CONFIG="/usr/share/aios/sway/config"
+  fi
+fi
+
+if ! command -v sway >/dev/null 2>&1; then
+  echo "aios-session: sway is not installed (dnf install sway / apt install sway)." >&2
+  exit 1
+fi
+
+exec sway -c "$CONFIG"

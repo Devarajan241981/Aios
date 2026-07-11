@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=AIOS
+Comment=Privacy-first local AI desktop
+Exec=aios-session
+Type=Application
+DesktopNames=AIOS
+Keywords=ai;assistant;local;

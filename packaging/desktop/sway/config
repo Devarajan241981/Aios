@@ -1,0 +1,38 @@
+# AIOS Sway session config.
+#
+# A deliberately minimal wlroots compositor session whose "shell" is the AIOS
+# web UI running fullscreen. Sway handles windows; aiosd provides the assistant.
+# This is the seed of the Phase 3 desktop — a real panel/launcher comes later.
+
+set $mod Mod4
+
+### Appearance -------------------------------------------------------------
+# Solid dark background until a wallpaper is configured.
+output * bg #111114 solid_color
+default_border none
+gaps inner 0
+
+### Startup ----------------------------------------------------------------
+# Ensure the AI core is running (harmless if the systemd user service already
+# started it), then bring up the shell (kiosk browser -> local web UI).
+exec_always --no-startup-id systemctl --user start aiosd.service
+exec --no-startup-id aios-shell
+
+# Keep the shell browser fullscreen.
+for_window [app_id="firefox"]  fullscreen enable
+for_window [app_id="chromium"] fullscreen enable
+for_window [app_id="org.gnome.Epiphany"] fullscreen enable
+
+### Escape hatches ---------------------------------------------------------
+# A terminal, window kill, and session exit — so the session is always usable.
+bindsym $mod+Return exec (foot || alacritty || xterm)
+bindsym $mod+Shift+q kill
+bindsym $mod+Shift+e exec swaymsg exit
+bindsym $mod+f fullscreen toggle
+floating_modifier $mod normal
+
+### Input ------------------------------------------------------------------
+input type:touchpad {
+    tap enabled
+    natural_scroll enabled
+}
