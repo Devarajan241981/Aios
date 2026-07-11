@@ -19,6 +19,7 @@ dev = []
 
 [project.scripts]
 aiosd = "aiosd.server:serve"
+aios-statusline = "aiosd.statusline:main"
 
 [tool.setuptools]
 packages = ["aiosd"]

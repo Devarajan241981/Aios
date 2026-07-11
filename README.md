@@ -23,6 +23,7 @@ no kernel work, no cloud. The rest is on the [roadmap](ROADMAP.md).
 | **Web UI** — self-contained chat app served by the daemon | ✅ working, tested |
 | `aios` — CLI (`ask`/`chat`/`overlay`/`status`/`index`/`search`/`sessions`/`history`/`tools`) | ✅ working |
 | **Global-hotkey overlay** (`Super+Space`) — assistant over any app (Sway) | ✅ working, tested |
+| **Native panel** (swaybar): backend health, index size, battery, clock, AIOS button | ✅ working, tested |
 | Streaming replies (token-by-token, SSE) — daemon + live CLI | ✅ working, tested |
 | Ollama backend (+ OpenAI-compatible, works with llama.cpp / LocalAI) | ✅ working |
 | Offline mock backend (for tests & demos) | ✅ working |
@@ -174,10 +175,12 @@ service and the web UI is the fullscreen shell under a minimal Sway session.
 # then log out and pick the "AIOS" session, or run: aios-session
 ```
 
-In the AIOS session, press **`Super+Space`** to summon the assistant as a small
-floating overlay over whatever you're doing (`Ctrl-D` hides it; it keeps its own
-memory across summons). The overlay also works standalone in any terminal:
-`aios overlay`.
+The session has a top **panel** (swaybar) showing the AI backend's health, how
+many documents are indexed, battery, and the clock — with an **AIOS button** you
+can click to summon the assistant. And you can press **`Super+Space`** to summon
+it as a small floating overlay over whatever you're doing (`Ctrl-D` hides it; it
+keeps its own memory across summons). The overlay also works standalone in any
+terminal: `aios overlay`.
 
 The bring-up scripts and session config are written and syntax-checked here; the
 final run happens on the M4. Full guide: [docs/asahi-bringup.md](docs/asahi-bringup.md).

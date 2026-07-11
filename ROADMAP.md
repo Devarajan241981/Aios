@@ -57,8 +57,10 @@ on the M4 is the remaining step (see [docs/asahi-bringup.md](docs/asahi-bringup.
 - [x] Login session entry (`aios.desktop`) + Asahi bring-up script
 - [x] Global hotkey (`Super+Space`) → assistant overlay over other apps
       (Sway scratchpad + `aios overlay`, with its own persistent session)
+- [x] Native panel (swaybar): backend health, index size, battery, clock, and a
+      clickable AIOS button that summons the overlay (i3bar protocol)
 - [ ] Boot Asahi Linux on the M4 and run the bring-up (needs hardware)
-- [ ] Native panel/launcher (status bar, app launcher, workspaces)
+- [ ] App launcher + workspace switcher in the panel
 - [ ] Theming (light/dark, accent) beyond the current web UI
 
 **Exit criteria:** log into an AIOS session on the M4 and invoke the assistant

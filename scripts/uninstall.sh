@@ -31,7 +31,7 @@ if command -v systemctl >/dev/null 2>&1; then
 fi
 
 run rm -f "$BIN/aios" "$BIN/aios-shell" "$BIN/aios-session" \
-          "$BIN/aios-overlay" "$BIN/aios-overlay-toggle"
+          "$BIN/aios-overlay" "$BIN/aios-overlay-toggle" "$BIN/aios-statusline"
 run rm -f "$UNIT_DIR/aiosd.service"
 run rm -rf "$CFG"
 

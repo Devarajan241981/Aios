@@ -45,6 +45,15 @@ run install -m 0755 "$REPO/packaging/desktop/aios-overlay-toggle" "$BIN/aios-ove
 say "Sway session config → $CFG/sway/config"
 run install -m 0644 "$REPO/packaging/desktop/sway/config" "$CFG/sway/config"
 
+say "Status line (swaybar) → $BIN/aios-statusline"
+if [ "$DRY_RUN" = 1 ]; then
+  note "+ generate aios-statusline wrapper (python3 -m aiosd.statusline, PYTHONPATH=$REPO/ai-core)"
+else
+  printf '#!/usr/bin/env bash\nexec env PYTHONPATH=%q python3 -m aiosd.statusline "$@"\n' \
+      "$REPO/ai-core" > "$BIN/aios-statusline"
+  chmod +x "$BIN/aios-statusline"
+fi
+
 say "systemd user service → $UNIT_DIR/aiosd.service"
 if [ "$DRY_RUN" = 1 ]; then
   note "+ generate unit with WorkingDirectory=$REPO/ai-core"

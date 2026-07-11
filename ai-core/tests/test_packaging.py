@@ -84,6 +84,16 @@ class TestPackagingContent(unittest.TestCase):
         self.assertIn("bin/aios", inst)
         self.assertIn("--dry-run", inst)
 
+    def test_sway_has_status_bar(self):
+        cfg = _read("packaging/desktop/sway/config")
+        self.assertIn("bar {", cfg)
+        self.assertIn("status_command aios-statusline", cfg)
+
+    def test_installer_generates_statusline(self):
+        inst = _read("scripts/install.sh")
+        self.assertIn("aios-statusline", inst)
+        self.assertIn("aiosd.statusline", inst)
+
 
 if __name__ == "__main__":
     unittest.main()
