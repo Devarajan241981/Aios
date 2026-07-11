@@ -62,6 +62,9 @@ INDEX_HTML = r"""<!doctype html>
   .approval h4{margin:0 0 8px;font-size:13px}
   .approval pre{background:var(--code);color:var(--code-fg);padding:10px;border-radius:8px;
                 overflow-x:auto;font-size:12px;margin:6px 0;white-space:pre-wrap}
+  .approval pre .d-add{color:#3fb950}
+  .approval pre .d-del{color:#f85149}
+  .approval pre .d-hunk{color:#79c0ff}
   .approval .tool{font-weight:600;font-size:13px}
   .approval .btns{display:flex;gap:8px;margin-top:10px}
   .btn{padding:7px 14px;border-radius:8px;border:1px solid var(--border);cursor:pointer;font-size:13px}
@@ -143,6 +146,15 @@ async function loadSessions(){
 
 function clearThread(){ $('#wrap').innerHTML=''; }
 function escapeHtml(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function formatPreview(text){
+  return (text||'').split('\n').map(l=>{
+    const e=escapeHtml(l);
+    if(l.startsWith('+')&&!l.startsWith('+++')) return '<span class="d-add">'+e+'</span>';
+    if(l.startsWith('-')&&!l.startsWith('---')) return '<span class="d-del">'+e+'</span>';
+    if(l.startsWith('@@')) return '<span class="d-hunk">'+e+'</span>';
+    return e;
+  }).join('\n');
+}
 
 function bubble(role, text){
   const d=document.createElement('div'); d.className='msg '+role;
@@ -218,7 +230,7 @@ async function sendTools(text, approved){
 function renderApproval(text, pending, approved){
   const card=document.createElement('div'); card.className='approval';
   let html='<h4>The assistant wants to run '+pending.length+' action(s):</h4>';
-  pending.forEach(p=>{ html+='<div class="tool">▸ '+escapeHtml(p.tool)+'</div><pre>'+escapeHtml(p.preview)+'</pre>'; });
+  pending.forEach(p=>{ html+='<div class="tool">▸ '+escapeHtml(p.tool)+'</div><pre>'+formatPreview(p.preview)+'</pre>'; });
   html+='<div class="btns"><button class="btn primary">Approve</button><button class="btn ghost">Deny</button></div>';
   card.innerHTML=html; $('#wrap').appendChild(card); scroll();
   card.querySelector('.primary').onclick=async()=>{

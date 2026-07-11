@@ -22,6 +22,12 @@ class TestUiTemplate(unittest.TestCase):
         self.assertNotIn("src=", html)
         self.assertIn("<style>", html)  # CSS inlined
 
+    def test_has_diff_preview_styling(self):
+        html = index_html("1.0.0")
+        self.assertIn("formatPreview", html)   # colored diff renderer
+        self.assertIn("d-add", html)
+        self.assertIn("d-del", html)
+
 
 class TestUiServed(unittest.TestCase):
     @classmethod

@@ -78,6 +78,30 @@ class TestMutatingTools(unittest.TestCase):
         self.assertIn("Create", text)
         self.assertFalse(os.path.exists(target))
 
+    def test_overwrite_preview_shows_unified_diff(self):
+        target = os.path.join(self.tmp.name, "diff.txt")
+        with open(target, "w") as fh:
+            fh.write("line1\nline2\nline3\n")
+        text = self.reg.preview(
+            "write_file",
+            {"path": target, "content": "line1\nCHANGED\nline3\n"},
+            self.ctx,
+        )
+        self.assertIn("Overwrite", text)
+        self.assertIn("@@", text)          # a hunk header
+        self.assertIn("-line2", text)      # removed line
+        self.assertIn("+CHANGED", text)    # added line
+        # still no side effect
+        with open(target) as fh:
+            self.assertEqual(fh.read(), "line1\nline2\nline3\n")
+
+    def test_overwrite_identical_reports_no_changes(self):
+        target = os.path.join(self.tmp.name, "same.txt")
+        with open(target, "w") as fh:
+            fh.write("unchanged\n")
+        text = self.reg.preview("write_file", {"path": target, "content": "unchanged\n"}, self.ctx)
+        self.assertIn("no changes", text)
+
     def test_run_command_allowlist(self):
         ok = self.reg.execute("run_command", {"command": "echo hello"}, self.ctx, approve=True)
         self.assertTrue(ok["ok"])

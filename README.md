@@ -84,8 +84,9 @@ For higher-quality results, opt into local dense embeddings:
 `system_info`, `current_time`, `search_notes`) run automatically but filesystem
 access is confined to your home (plus `AIOS_ALLOWED_ROOTS`) with symlink-safe
 path checks. **Mutating tools** (`write_file`, `run_command`) use *preview-before-run*:
-the daemon halts and shows you the exact effect, and executes **only** the action
-you approve — verified by a content hash, so you never run something different
+the daemon halts and shows you the exact effect — a **colored unified diff** when
+`write_file` would overwrite an existing file — and executes **only** the action
+you approve, verified by a content hash, so you never run something different
 from what you saw. `run_command` is additionally restricted to an allowlist
 (`AIOS_ALLOWED_COMMANDS`). Full model: [docs/decisions/0002-tools-safety.md](docs/decisions/0002-tools-safety.md).
 

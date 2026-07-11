@@ -79,7 +79,9 @@ Let the assistant *do* things, safely. Shipped across Phase 2.5 / 2.6 (see
 - [x] Preview-before-run gate with content-addressed approval
 - [x] First mutating tools: `write_file`, `run_command` (allowlisted, no shell)
 - [x] Interactive CLI approval loop (`aios ask --tools`) + non-interactive `--approve`
-- [ ] Richer previews (diffs for overwrites) + trash-based delete/move tools
+- [x] Richer previews: unified diffs for `write_file` overwrites, colored in the
+      CLI and the web-UI approval card
+- [ ] Trash-based delete/move tools behind the same gate
 - [ ] Natural-language automations → scheduled jobs (systemd timers)
 - [ ] Per-tool / per-session permission scopes + tool-invocation audit log
 

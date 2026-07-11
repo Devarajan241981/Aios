@@ -15,6 +15,7 @@ Design principles (see docs/decisions/0002-tools-safety.md):
 from __future__ import annotations
 
 import datetime
+import difflib
 import hashlib
 import json
 import os
@@ -152,9 +153,30 @@ def _write_file_preview(args, ctx):
     except ToolError as exc:
         return f"WOULD BE REJECTED: {exc}"
     content = args.get("content", "")
-    verb = "Overwrite" if os.path.exists(real) else "Create"
-    body = content if len(content) <= 500 else content[:500] + f"\n… (+{len(content) - 500} more bytes)"
-    return f"{verb} {real} ({len(content)} bytes):\n{body}"
+
+    if not os.path.exists(real):
+        body = content if len(content) <= 800 else content[:800] + f"\n… (+{len(content) - 800} more bytes)"
+        return f"Create {real} ({len(content)} bytes):\n{body}"
+
+    try:
+        with open(real, "r", encoding="utf-8", errors="ignore") as fh:
+            old = fh.read()
+    except OSError as exc:
+        return f"Overwrite {real} (cannot read current contents: {exc})"
+
+    if old == content:
+        return f"Overwrite {real}: no changes (proposed content is identical)"
+
+    diff = list(difflib.unified_diff(
+        old.splitlines(), content.splitlines(),
+        fromfile="current", tofile="proposed", lineterm="", n=3,
+    ))
+    limit = 200
+    shown = diff[:limit]
+    text = "\n".join(shown)
+    if len(diff) > limit:
+        text += f"\n… (+{len(diff) - limit} more diff lines)"
+    return f"Overwrite {real} ({len(old)} → {len(content)} bytes):\n{text}"
 
 
 def _allowed_commands(config):
