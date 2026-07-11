@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aios-core"
+version = "0.3.0"
+description = "AIOS AI-core daemon (aiosd): a privacy-first, local AI assistant service."
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "AIOS contributors" }]
+keywords = ["ai", "assistant", "local", "privacy", "llm", "rag", "agent"]
+dependencies = []  # standard library only, by design
+
+[project.optional-dependencies]
+# Optional higher-quality local models are provided by external servers
+# (Ollama / llama.cpp / LocalAI); no Python packages are required.
+dev = []
+
+[project.scripts]
+aiosd = "aiosd.server:serve"
+
+[tool.setuptools]
+packages = ["aiosd"]

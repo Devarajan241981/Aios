@@ -1,0 +1,348 @@
+#!/usr/bin/env python3
+"""aios — command-line client for the AIOS AI-core daemon (aiosd).
+
+Usage:
+    aios ask "how do I free up disk space?"
+    echo "summarise this" | aios ask
+    aios chat
+    aios status
+    aios index ~/Documents ~/notes      # build semantic memory over your files
+    aios index --stats
+    aios search "where did I discuss the budget?"
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+
+HOST = os.environ.get("AIOS_HOST", "127.0.0.1")
+PORT = os.environ.get("AIOS_PORT", "8765")
+
+
+def base_url() -> str:
+    return f"http://{HOST}:{PORT}"
+
+
+def _headers() -> dict:
+    headers = {"Content-Type": "application/json"}
+    token = os.environ.get("AIOS_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
+def request(method: str, path: str, payload=None, timeout: float = 125.0):
+    data = json.dumps(payload).encode() if payload is not None else None
+    req = urllib.request.Request(
+        base_url() + path,
+        data=data,
+        method=method,
+        headers=_headers(),
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.status, json.loads(resp.read().decode())
+    except urllib.error.HTTPError as exc:
+        try:
+            return exc.code, json.loads(exc.read().decode())
+        except Exception:
+            return exc.code, {"error": f"HTTP {exc.code}"}
+    except urllib.error.URLError as exc:
+        return None, {
+            "error": (
+                f"cannot reach aiosd at {base_url()}: {exc.reason}. "
+                "Start it with `make run` (or `python -m aiosd` in ai-core/)."
+            )
+        }
+
+
+def stream_request(path: str, payload, timeout: float = 600.0):
+    """POST with stream=true and yield parsed SSE event dicts."""
+    data = json.dumps({**payload, "stream": True}).encode()
+    req = urllib.request.Request(
+        base_url() + path, data=data, method="POST", headers=_headers(),
+    )
+    resp = urllib.request.urlopen(req, timeout=timeout)
+    for raw in resp:
+        line = raw.decode("utf-8", errors="replace").rstrip("\r\n")
+        if not line.startswith("data:"):
+            continue
+        body = line[len("data:"):].strip()
+        if body == "[DONE]":
+            break
+        try:
+            yield json.loads(body)
+        except ValueError:
+            continue
+
+
+def cmd_index(args) -> int:
+    if args.stats:
+        code, body = request("GET", "/v1/index/stats", timeout=8)
+        if code is None or code >= 400:
+            print(body.get("error", "error"), file=sys.stderr)
+            return 1
+        print(f"documents: {body['documents']}")
+        for source in body["sources"]:
+            print(f"  {source}")
+        return 0
+
+    if not args.paths:
+        print("give one or more files/folders to index (or --stats)", file=sys.stderr)
+        return 2
+    paths = [os.path.abspath(os.path.expanduser(p)) for p in args.paths]
+    print(f"indexing {len(paths)} path(s)… (this reads your files locally; nothing is uploaded)")
+    code, body = request("POST", "/v1/index", {"paths": paths}, timeout=600)
+    if code is None or code >= 400:
+        print(body.get("error", "error"), file=sys.stderr)
+        return 1
+    print(f"indexed {body['indexed']} new chunk(s); {body['documents']} total in memory")
+    return 0
+
+
+def cmd_search(args) -> int:
+    query = " ".join(args.query).strip()
+    if not query:
+        print("nothing to search for", file=sys.stderr)
+        return 2
+    code, body = request("POST", "/v1/search", {"query": query, "k": args.k})
+    if code is None or code >= 400:
+        print(body.get("error", "error"), file=sys.stderr)
+        return 1
+    results = body["results"]
+    if not results:
+        print("no matches (have you run `aios index <path>` yet?)")
+        return 0
+    for hit in results:
+        snippet = " ".join(hit["text"].split())[:160]
+        print(f"[{hit['score']:.3f}] {hit['source']}\n    {snippet}\n")
+    return 0
+
+
+def cmd_status(_args) -> int:
+    code, body = request("GET", "/health", timeout=8)
+    if code is None:
+        print(body["error"], file=sys.stderr)
+        return 1
+    print(json.dumps(body, indent=2))
+    return 0 if body.get("status") == "ok" else 1
+
+
+def _ask_with_tools(prompt: str, auto_approve: bool) -> int:
+    approved: list[str] = []
+    for _round in range(8):
+        payload = {"prompt": prompt, "use_tools": True, "approve": auto_approve}
+        if approved:
+            payload["approved_signatures"] = approved
+        code, body = request("POST", "/v1/chat", payload, timeout=600)
+        if code is None or code >= 400:
+            print(body.get("error", "error"), file=sys.stderr)
+            return 1
+
+        if body.get("status") == "needs_approval":
+            print("\nThe assistant wants to run the following action(s):\n")
+            for p in body["pending"]:
+                print(f"  ▸ {p['tool']}")
+                for line in p["preview"].splitlines():
+                    print(f"      {line}")
+                print()
+            try:
+                answer = input(f"Approve these {len(body['pending'])} action(s)? [y/N] ").strip().lower()
+            except EOFError:
+                answer = ""
+            if answer in ("y", "yes"):
+                approved.extend(p["signature"] for p in body["pending"])
+                continue
+            print("declined — nothing was changed.")
+            return 0
+
+        print(body["reply"])
+        if body.get("steps"):
+            _print_steps(body["steps"])
+        return 0
+
+    print("too many approval rounds; aborting.", file=sys.stderr)
+    return 1
+
+
+def _print_steps(steps) -> None:
+    for step in steps:
+        result = step["result"]
+        if result.get("ok"):
+            status = "ok"
+        elif result.get("needs_approval"):
+            status = "needs approval"
+        else:
+            status = f"error: {result.get('error')}"
+        args = ", ".join(f"{k}={v!r}" for k, v in (step.get("args") or {}).items())
+        print(f"  · {step['tool']}({args}) → {status}", file=sys.stderr)
+
+
+def cmd_ask(args) -> int:
+    prompt = " ".join(args.prompt).strip()
+    if not prompt and not sys.stdin.isatty():
+        prompt = sys.stdin.read().strip()
+    if not prompt:
+        print("nothing to ask (pass a question or pipe text via stdin)", file=sys.stderr)
+        return 2
+
+    if args.tools:
+        return _ask_with_tools(prompt, auto_approve=args.approve)
+
+    try:
+        printed = False
+        for evt in stream_request("/v1/chat", {"prompt": prompt}):
+            if "delta" in evt:
+                sys.stdout.write(evt["delta"])
+                sys.stdout.flush()
+                printed = True
+            elif "error" in evt:
+                if printed:
+                    print()
+                print(evt["error"], file=sys.stderr)
+                return 1
+        if printed:
+            print()
+        return 0
+    except urllib.error.URLError as exc:
+        print(
+            f"cannot reach aiosd at {base_url()}: {exc.reason}. "
+            "Start it with `make run` (or `python -m aiosd` in ai-core/).",
+            file=sys.stderr,
+        )
+        return 1
+
+
+def cmd_chat(args) -> int:
+    session = getattr(args, "session", None)
+    banner = "AIOS chat" + (f" [session: {session}]" if session else "")
+    print(banner + " — type 'exit' or Ctrl-D to quit")
+    history: list[dict] = []
+    while True:
+        try:
+            line = input("you› ").strip()
+        except EOFError:
+            print()
+            break
+        if line in ("exit", "quit"):
+            break
+        if not line:
+            continue
+        sys.stdout.write("aios› ")
+        sys.stdout.flush()
+        parts: list[str] = []
+        error = None
+        # With a session the daemon persists and replays history from its DB;
+        # otherwise we carry it in-process for this run only.
+        payload = {"prompt": line}
+        if session:
+            payload["session_id"] = session
+        else:
+            payload["history"] = history
+        try:
+            for evt in stream_request("/v1/chat", payload):
+                if "delta" in evt:
+                    sys.stdout.write(evt["delta"])
+                    sys.stdout.flush()
+                    parts.append(evt["delta"])
+                elif "error" in evt:
+                    error = evt["error"]
+                    break
+        except urllib.error.URLError as exc:
+            print()
+            print(f"cannot reach aiosd at {base_url()}: {exc.reason}", file=sys.stderr)
+            continue
+        print("\n")  # end the reply line + a blank spacer
+        if error:
+            print(error, file=sys.stderr)
+            continue
+        history.append({"role": "user", "content": line})
+        history.append({"role": "assistant", "content": "".join(parts)})
+    return 0
+
+
+def _fmt_time(ts) -> str:
+    import datetime
+    return datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M")
+
+
+def cmd_sessions(_args) -> int:
+    code, body = request("GET", "/v1/sessions", timeout=8)
+    if code is None or code >= 400:
+        print(body.get("error", "error"), file=sys.stderr)
+        return 1
+    sessions = body["sessions"]
+    if not sessions:
+        print("no sessions yet — start one with `aios chat --session <name>`")
+        return 0
+    for s in sessions:
+        print(f"{s['id']:<14} {s['messages']:>3} msgs  {_fmt_time(s['updated_at'])}  {s['title']}")
+    return 0
+
+
+def cmd_history(args) -> int:
+    code, body = request("GET", f"/v1/sessions/{args.session}", timeout=8)
+    if code is None or code >= 400:
+        print(body.get("error", "error"), file=sys.stderr)
+        return 1
+    for m in body["messages"]:
+        who = "you" if m["role"] == "user" else "aios"
+        print(f"{who}› {m['content']}")
+    return 0
+
+
+def cmd_tools(_args) -> int:
+    code, body = request("GET", "/v1/tools", timeout=8)
+    if code is None or code >= 400:
+        print(body.get("error", "error"), file=sys.stderr)
+        return 1
+    print(f"tools {'enabled' if body['enabled'] else 'disabled'}:")
+    for t in body["tools"]:
+        tag = "" if t["safe"] else "  (requires approval)"
+        print(f"  {t['name']:<14} {t['description']}{tag}")
+    return 0
+
+
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(prog="aios", description="AIOS AI assistant client")
+    sub = parser.add_subparsers(dest="cmd", required=True)
+
+    ask = sub.add_parser("ask", help="ask a single question")
+    ask.add_argument("prompt", nargs="*", help="the question (or pipe via stdin)")
+    ask.add_argument("--tools", action="store_true", help="let the assistant use tools")
+    ask.add_argument("--approve", action="store_true", help="approve mutating tools")
+    ask.set_defaults(func=cmd_ask)
+
+    chat = sub.add_parser("chat", help="interactive chat session")
+    chat.add_argument("--session", help="named session; persists and resumes history")
+    chat.set_defaults(func=cmd_chat)
+
+    sub.add_parser("status", help="daemon + backend health").set_defaults(func=cmd_status)
+    sub.add_parser("sessions", help="list saved chat sessions").set_defaults(func=cmd_sessions)
+    sub.add_parser("tools", help="list available tools").set_defaults(func=cmd_tools)
+
+    history = sub.add_parser("history", help="print a session's transcript")
+    history.add_argument("session", help="session id")
+    history.set_defaults(func=cmd_history)
+
+    index = sub.add_parser("index", help="index files/folders into semantic memory")
+    index.add_argument("paths", nargs="*", help="files or folders to index")
+    index.add_argument("--stats", action="store_true", help="show what is indexed")
+    index.set_defaults(func=cmd_index)
+
+    search = sub.add_parser("search", help="semantic search over indexed files")
+    search.add_argument("query", nargs="+", help="the search query")
+    search.add_argument("-k", type=int, default=5, help="number of results (default 5)")
+    search.set_defaults(func=cmd_search)
+
+    args = parser.parse_args(argv)
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,42 @@
+# AIOS AI-core daemon — user service.
+#
+# Install (on the Linux target, e.g. Asahi):
+#   mkdir -p ~/.config/systemd/user
+#   cp packaging/systemd/aiosd.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now aiosd
+#
+# Runs as the logged-in user (no root). Hardened so a compromised assistant
+# cannot escalate or reach the rest of the system.
+
+[Unit]
+Description=AIOS AI-core daemon (aiosd)
+Documentation=https://github.com/USER/aios
+After=network-online.target
+
+[Service]
+Type=simple
+# Adjust WorkingDirectory to wherever the repo is checked out.
+WorkingDirectory=%h/aios/ai-core
+ExecStart=/usr/bin/env python3 -m aiosd
+Environment=AIOS_HOST=127.0.0.1
+Environment=AIOS_PORT=8765
+Environment=AIOS_BACKEND=ollama
+Restart=on-failure
+RestartSec=2
+
+# --- Sandboxing (see docs/architecture.md, "Security model") ---
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+
+[Install]
+WantedBy=default.target

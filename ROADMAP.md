@@ -1,0 +1,97 @@
+# AIOS Roadmap
+
+Honest, phased, and ordered by *what unlocks the most value per unit of solo
+effort*. Each phase ends with something you can actually run and show.
+
+The guiding principle: **build the AI OS experience on top of a working Linux
+base, not underneath it.** We never touch the kernel until (and unless) a real
+need forces it.
+
+---
+
+## Phase 1 — The AI core (✅ in progress, runs on macOS today)
+
+The differentiator, buildable now with zero OS work.
+
+- [x] `aiosd` loopback daemon with `/health` + `/v1/chat`
+- [x] Pluggable backends: Ollama (OpenAI-compatible) + offline mock
+- [x] Assistant orchestration with device-context grounding
+- [x] `aios` CLI (`ask` / `chat` / `status`)
+- [x] Offline test suite + CI
+- [x] Streaming responses (token-by-token) over the HTTP API (SSE) + live CLI
+- [x] Conversation persistence — named, resumable sessions in local SQLite
+- [x] Hardening: bearer-token auth, structured logging, body limits, `/version`
+- [x] Packaging: `pyproject.toml` + `aiosd` console entry point
+- [ ] Config file (`~/.config/aios/config.toml`) in addition to env vars
+
+**Exit criteria:** you use `aios` daily on your Mac for real questions.
+
+## Phase 2 — Memory & semantic search (✅ core working)
+
+Turn the assistant from stateless chat into something that knows *your* stuff.
+
+- [x] Local document indexer (files, notes, markdown, code) → embeddings
+- [x] Vector store with cosine search + JSON persistence (pure Python, no server)
+- [x] Offline hashing embedder (zero downloads) + opt-in Ollama dense embedder
+- [x] Retrieval step wired into the Assistant seam (RAG over your data)
+- [x] "Where did I discuss X?" search (`aios search`) + `/v1/search` endpoint
+- [ ] Incremental re-index (only changed files; mtime tracking)
+- [ ] Explicit per-source permissions (assistant sees only what you allow)
+- [ ] Encrypt the index at rest
+- [ ] Upgrade to an ANN index (sqlite-vec / FAISS) if the corpus grows large
+
+**Exit criteria:** ask about your own notes and get grounded answers, offline. ✅
+(Basic version reached — dense-embedding quality + encryption still to come.)
+
+## Phase 3 — The desktop shell (Linux target)
+
+Bring up AIOS as an actual desktop. This is where we move to hardware.
+
+- [ ] Boot Asahi Linux (Fedora Asahi Remix) on the MacBook Air M4
+- [ ] Choose the compositor base: **Sway/wlroots** (simplest, most stable) first
+- [ ] Minimal panel + launcher with an "Ask AIOS" surface calling `aiosd`
+- [ ] Global hotkey → assistant overlay
+- [ ] `aiosd` as a hardened systemd **user** service (unit already in `packaging/`)
+- [ ] Theming (light/dark, accent) following the UI guidelines in the architecture doc
+
+**Exit criteria:** log into an AIOS session on the M4 and invoke the assistant
+from anywhere.
+
+## Phase 4 — System actions & automation (✅ core landed)
+
+Let the assistant *do* things, safely. Shipped across Phase 2.5 / 2.6 (see
+[ADR-0002](docs/decisions/0002-tools-safety.md)).
+
+- [x] Tool/function-calling layer (assistant calls whitelisted capabilities)
+- [x] Backend-agnostic agent loop (Ollama tool-calling + testable scripted path)
+- [x] Sandboxed filesystem tools (home-confined, symlink-safe) + approval gate
+- [x] Safe built-in tools: `current_time`, `system_info`, `list_dir`, `read_file`,
+      `search_notes`
+- [x] Preview-before-run gate with content-addressed approval
+- [x] First mutating tools: `write_file`, `run_command` (allowlisted, no shell)
+- [x] Interactive CLI approval loop (`aios ask --tools`) + non-interactive `--approve`
+- [ ] Richer previews (diffs for overwrites) + trash-based delete/move tools
+- [ ] Natural-language automations → scheduled jobs (systemd timers)
+- [ ] Per-tool / per-session permission scopes + tool-invocation audit log
+
+## Phase 5 — Distribution & polish
+
+- [ ] Voice input (offline ASR: Vosk / whisper.cpp) → assistant
+- [ ] Flatpak packaging for AIOS apps
+- [ ] Installable image / setup script for the M4
+- [ ] Docs site + demo video
+
+---
+
+## Reality checklist (things we will *not* pretend are easy)
+
+- **Apple GPU acceleration on Asahi** is still maturing. Plan for a period of
+  software rendering / limited GPU on the M4. Don't block Phase 3 on it.
+- **Model size vs RAM.** A MacBook Air M4 comfortably runs 3B–8B quantized
+  models. Bigger models need more RAM/patience. Default to small models.
+- **"AI writes the OS" is a tool, not a plan.** ChatGPT/Claude accelerate coding;
+  they don't remove the need to understand Wayland, systemd, and the model stack.
+- **Correction to the original research doc:** Apple Silicon (M1–M4) SoCs do
+  **not** contain a T2 chip — the T2 was a separate coprocessor on Intel Macs.
+  The Secure Enclave and related functions are integrated into the M-series SoC
+  itself. See [docs/architecture.md](docs/architecture.md).
