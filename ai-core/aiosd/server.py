@@ -41,6 +41,10 @@ from .retriever import Retriever
 from .storage import Storage
 from .store import VectorStore
 from .tools import Registry, ToolContext, default_registry
+from .ui import index_html
+
+# Endpoints reachable without a bearer token: liveness and the static web app.
+_PUBLIC_PATHS = {"/health", "/", "/favicon.ico"}
 
 log = logging.getLogger("aiosd")
 
@@ -76,6 +80,15 @@ def make_handler(state: AppState):
             body = json.dumps(payload).encode()
             self.send_response(code)
             self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def _html(self, text):
+            self._status = 200
+            body = text.encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
@@ -120,7 +133,7 @@ def make_handler(state: AppState):
             self._status = 200
             started = time.perf_counter()
             try:
-                if self.path != "/health" and not self._auth_ok():
+                if self.path not in _PUBLIC_PATHS and not self._auth_ok():
                     self._json(401, {"error": "unauthorized"})
                     return
                 route()
@@ -161,7 +174,11 @@ def make_handler(state: AppState):
             elif self.path.startswith("/v1/sessions/"):
                 self._get_session(self.path[len("/v1/sessions/"):])
             elif self.path == "/":
-                self._json(200, {"service": "aiosd", "version": __version__})
+                self._html(index_html(__version__))
+            elif self.path == "/favicon.ico":
+                self._status = 204
+                self.send_response(204)
+                self.end_headers()
             else:
                 self._json(404, {"error": "not found"})
 
@@ -358,6 +375,7 @@ def serve(config=None):
         "on" if config.token else "off",
     )
     print(f"aiosd {__version__} listening on http://{host}:{port}", flush=True)
+    print(f"  web UI:  http://{host}:{port}/", flush=True)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

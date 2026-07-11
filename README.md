@@ -20,6 +20,7 @@ no kernel work, no cloud. The rest is on the [roadmap](ROADMAP.md).
 | Component | State |
 | --- | --- |
 | `aiosd` — local assistant daemon (HTTP, loopback) | ✅ working, tested |
+| **Web UI** — self-contained chat app served by the daemon | ✅ working, tested |
 | `aios` — CLI (`ask`/`chat`/`status`/`index`/`search`/`sessions`/`history`/`tools`) | ✅ working |
 | Streaming replies (token-by-token, SSE) — daemon + live CLI | ✅ working, tested |
 | Ollama backend (+ OpenAI-compatible, works with llama.cpp / LocalAI) | ✅ working |
@@ -39,7 +40,8 @@ no kernel work, no cloud. The rest is on the [roadmap](ROADMAP.md).
 ```bash
 # 1. See it work right now with zero setup (offline mock backend):
 make mock          # in one terminal — starts the daemon
-make status        # in another — should print {"status": "ok", ...}
+open http://127.0.0.1:8765/   # ← the web UI: chat, sessions, tool approvals
+make status        # or from another terminal: {"status": "ok", ...}
 ./bin/aios ask "hello"      # -> [mock:llama3.2] hello
 
 # 2. Real local LLM via Ollama:
@@ -147,8 +149,9 @@ ai-core/aiosd/     the daemon, organized by subsystem:
                      storage.py    SQLite session/message persistence
                      tools.py agent.py  — sandboxed tools + tool-calling loop
                      server.py     HTTP API, auth, logging, routing (AppState)
+                     ui.py         self-contained web UI served at GET /
                      config.py context.py
-ai-core/tests/     offline unittest suite (72 tests, mock backend)
+ai-core/tests/     offline unittest suite (87 tests, mock backend)
 ai-core/pyproject.toml   packaging (aiosd console script)
 bin/aios           the CLI client
 docs/              architecture + decision records (ADR-0001, ADR-0002)

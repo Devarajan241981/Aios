@@ -22,3 +22,7 @@ venv/
 
 # Logs
 *.log
+
+# Test / tooling artifacts
+.playwright-mcp/
+aios-ui.png

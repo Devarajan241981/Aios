@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git -c commit.gpgsign=false commit -q -m ' *)",
+      "Bash(git push *)"
+    ]
+  }
+}
