@@ -61,6 +61,7 @@ class Config:
     token: str = ""                  # if set, require Bearer auth on the API
     log_level: str = "INFO"
     max_body_bytes: int = 4_000_000  # reject oversized request bodies
+    accent: str = ""                 # default web-UI accent color (CSS color)
     audit_enabled: bool = True
     audit_path: str = field(default_factory=_default_audit_path)
     trash_path: str = field(default_factory=_default_trash_path)
@@ -94,6 +95,7 @@ class Config:
             token=env.get("AIOS_TOKEN", cls.token),
             log_level=env.get("AIOS_LOG_LEVEL", cls.log_level).upper(),
             max_body_bytes=int(env.get("AIOS_MAX_BODY_BYTES", cls.max_body_bytes)),
+            accent=env.get("AIOS_ACCENT", cls.accent),
             audit_enabled=_truthy(env.get("AIOS_AUDIT", "on")),
             audit_path=env.get("AIOS_AUDIT_PATH") or _default_audit_path(),
             trash_path=env.get("AIOS_TRASH_PATH") or _default_trash_path(),

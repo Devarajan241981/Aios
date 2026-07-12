@@ -14,6 +14,18 @@ class TestUiTemplate(unittest.TestCase):
         self.assertIn("9.9.9", html)
         self.assertNotIn("__AIOS_VERSION__", html)
 
+    def test_accent_injected(self):
+        html = index_html("1.0.0", accent="#123456")
+        self.assertIn("#123456", html)
+        self.assertNotIn("__AIOS_ACCENT__", html)
+
+    def test_theme_controls_present(self):
+        html = index_html("1.0.0")
+        self.assertIn("data-theme", html)          # explicit theme overrides
+        self.assertIn("aios-theme", html)          # persisted preference
+        self.assertIn("themebtn", html)            # toggle button
+        self.assertNotIn("__AIOS_ACCENT__", html)  # placeholder replaced even when empty
+
     def test_self_contained(self):
         html = index_html("1.0.0")
         # no external resources -> CSP-friendly / offline

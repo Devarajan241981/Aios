@@ -26,6 +26,17 @@ INDEX_HTML = r"""<!doctype html>
       --warn-bg:#2a1f10; --warn-border:#7c5514; --code:#0b1020; --code-fg:#e2e8f0;
     }
   }
+  /* Explicit theme choices win over the system preference. */
+  :root[data-theme="light"]{
+    --bg:#f7f7f8; --panel:#ffffff; --border:#e5e5e8; --text:#1a1a1f; --muted:#6b6b76;
+    --accent:#4f46e5; --accent-fg:#fff; --user:#eef0ff; --assistant:#f3f4f6;
+    --warn-bg:#fff7ed; --warn-border:#fdba74; --code:#0f172a; --code-fg:#e2e8f0;
+  }
+  :root[data-theme="dark"]{
+    --bg:#111114; --panel:#1a1a1f; --border:#2a2a31; --text:#eaeaf0; --muted:#9a9aa6;
+    --accent:#7c74ff; --accent-fg:#fff; --user:#232544; --assistant:#202027;
+    --warn-bg:#2a1f10; --warn-border:#7c5514; --code:#0b1020; --code-fg:#e2e8f0;
+  }
   *{box-sizing:border-box}
   html,body{height:100%;margin:0}
   body{font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
@@ -49,7 +60,13 @@ INDEX_HTML = r"""<!doctype html>
           align-items:center;gap:14px;background:var(--panel)}
   .status{font-size:12px;color:var(--muted)}
   .status b{color:var(--text);font-weight:600}
-  .toolgle{margin-left:auto;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer}
+  .controls{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .accent-dots{display:flex;gap:6px}
+  .dot{width:14px;height:14px;border-radius:50%;cursor:pointer;border:2px solid transparent}
+  .dot.sel{border-color:var(--text)}
+  #themebtn{background:transparent;border:1px solid var(--border);border-radius:8px;
+            color:var(--text);cursor:pointer;padding:2px 9px;font-size:15px;line-height:1.4}
+  .toolgle{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer}
   .thread{flex:1;overflow-y:auto;padding:22px 18px;min-height:0}
   .wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
   .msg{padding:11px 14px;border-radius:12px;white-space:pre-wrap;word-wrap:break-word}
@@ -93,7 +110,11 @@ INDEX_HTML = r"""<!doctype html>
 <main>
   <div class="topbar">
     <div class="status" id="status">connecting…</div>
-    <label class="toolgle"><input type="checkbox" id="tools"> tools</label>
+    <div class="controls">
+      <span class="accent-dots" id="dots"></span>
+      <button id="themebtn" title="Theme: system / light / dark">◐</button>
+      <label class="toolgle"><input type="checkbox" id="tools"> tools</label>
+    </div>
   </div>
   <div class="thread" id="thread">
     <div class="wrap" id="wrap">
@@ -112,6 +133,7 @@ INDEX_HTML = r"""<!doctype html>
   </div>
 </main>
 <script>
+window.AIOS_ACCENT = "__AIOS_ACCENT__";
 const $ = s => document.querySelector(s);
 let session = null;
 let busy = false;
@@ -250,10 +272,41 @@ function renderApproval(text, pending, approved){
   card.querySelector('.ghost').onclick=()=>{ card.remove(); bubble('assistant','Declined — nothing was changed.'); };
 }
 
+// --- theme + accent (persisted in localStorage) ---
+const THEMES=['system','light','dark'];
+const THEME_ICON={system:'◐', light:'☀', dark:'☾'};
+const ACCENTS=['#4f46e5','#7c74ff','#2e9e5b','#d97706','#e11d73'];
+
+function applyTheme(){
+  const t=localStorage.getItem('aios-theme')||'system';
+  if(t==='system') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme',t);
+  const b=$('#themebtn'); if(b) b.textContent=THEME_ICON[t];
+}
+function cycleTheme(){
+  const t=localStorage.getItem('aios-theme')||'system';
+  localStorage.setItem('aios-theme', THEMES[(THEMES.indexOf(t)+1)%THEMES.length]);
+  applyTheme();
+}
+function renderDots(sel){
+  const el=$('#dots'); if(!el) return; el.innerHTML='';
+  ACCENTS.forEach(c=>{ const d=document.createElement('span');
+    d.className='dot'+(c===sel?' sel':''); d.style.background=c; d.title=c;
+    d.onclick=()=>{ localStorage.setItem('aios-accent',c); applyAccent(); }; el.appendChild(d); });
+}
+function applyAccent(){
+  const a=localStorage.getItem('aios-accent')||window.AIOS_ACCENT||'';
+  if(a) document.documentElement.style.setProperty('--accent',a);
+  else document.documentElement.style.removeProperty('--accent');
+  renderDots(a);
+}
+
 const input=$('#input');
 input.addEventListener('input',()=>{ input.style.height='auto'; input.style.height=Math.min(input.scrollHeight,160)+'px'; });
 input.addEventListener('keydown',e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
+$('#themebtn').addEventListener('click', cycleTheme);
 
+applyTheme(); applyAccent();
 loadStatus(); loadSessions(); setInterval(loadStatus, 15000);
 </script>
 </body>
@@ -261,5 +314,7 @@ loadStatus(); loadSessions(); setInterval(loadStatus, 15000);
 """
 
 
-def index_html(version: str) -> str:
-    return INDEX_HTML.replace("__AIOS_VERSION__", version)
+def index_html(version: str, accent: str = "") -> str:
+    return (INDEX_HTML
+            .replace("__AIOS_VERSION__", version)
+            .replace("__AIOS_ACCENT__", accent))

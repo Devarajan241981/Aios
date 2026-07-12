@@ -184,7 +184,7 @@ def make_handler(state: AppState):
             elif self.path.startswith("/v1/sessions/"):
                 self._get_session(self.path[len("/v1/sessions/"):])
             elif self.path == "/":
-                self._html(index_html(__version__))
+                self._html(index_html(__version__, cfg.accent))
             elif self.path == "/favicon.ico":
                 self._status = 204
                 self.send_response(204)

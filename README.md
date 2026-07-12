@@ -173,6 +173,7 @@ Every setting is also an environment variable (local-first defaults):
 | `AIOS_AUDIT` | `on` | record tool activity to an audit log |
 | `AIOS_AUDIT_PATH` | `~/.local/share/aios/audit.log` | audit log location |
 | `AIOS_TRASH_PATH` | `~/.local/share/aios/trash` | where `delete_file` moves files |
+| `AIOS_ACCENT` | *(theme default)* | default web-UI accent color (CSS color) |
 
 ## Repository layout
 

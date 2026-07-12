@@ -64,8 +64,10 @@ on the M4 is the remaining step (see [docs/asahi-bringup.md](docs/asahi-bringup.
       clickable AIOS button that summons the overlay (i3bar protocol)
 - [x] App launcher (`Super+D`, wofi/fuzzel/bemenu)
 - [ ] Boot Asahi Linux on the M4 and run the bring-up (needs hardware)
+- [x] Web-UI theming: system/light/dark toggle + accent picker (persisted),
+      `AIOS_ACCENT` default
 - [ ] Workspace switcher UI in the panel
-- [ ] Theming (light/dark, accent) beyond the current web UI
+- [ ] Native theming beyond the web UI (Sway/GTK accent)
 
 **Exit criteria:** log into an AIOS session on the M4 and invoke the assistant
 from anywhere.
