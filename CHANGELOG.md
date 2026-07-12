@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.4.0 — 2026-07-12
+
+Rounds out file management, the desktop, and user control. 155 tests.
+
+### Tools & agent
+- New mutating tools: **`move_file`** and **`delete_file`** (delete moves to a
+  restorable **trash**, not `rm`) — behind preview-before-run + audit.
+- **Per-session permission scopes**: `aios grant` / `aios revoke` and an
+  "Always allow" button in the web UI, so a trusted session can auto-approve a
+  tool instead of re-prompting for every mutation.
+
+### Automations
+- **`aios schedule`** (`add` / `list` / `remove`) — run a prompt on a systemd
+  user timer. Automations run plain `aios ask` (no tools), so a schedule can
+  never mutate anything unattended.
+
+### Desktop & UI
+- **App launcher** (`Super+D`, wofi/fuzzel/bemenu) in the Sway session.
+- **Web-UI theming**: system/light/dark toggle + accent-color picker (persisted
+  in the browser), with an `AIOS_ACCENT` default.
+
 ## v0.3.0 — 2026-07-12
 
 First tagged release of **AIOS**, a privacy-first, local AI operating-system

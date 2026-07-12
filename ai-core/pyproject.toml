@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aios-core"
-version = "0.3.0"
+version = "0.4.0"
 description = "AIOS AI-core daemon (aiosd): a privacy-first, local AI assistant service."
 requires-python = ">=3.11"
 license = { text = "MIT" }
