@@ -37,6 +37,9 @@ for_window [app_id="aios-overlay"] floating enable, resize set 760 520, \
     move position center, move to scratchpad, scratchpad show
 bindsym $mod+space exec aios-overlay-toggle
 
+### App launcher -----------------------------------------------------------
+bindsym $mod+d exec aios-launch
+
 ### Panel (swaybar) --------------------------------------------------------
 # AIOS status line: backend health, index size, battery, clock. Click the
 # "AIOS" block (or press Super+Space) to summon the assistant overlay.

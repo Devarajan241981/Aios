@@ -20,7 +20,9 @@ import hashlib
 import json
 import os
 import shlex
+import shutil
 import subprocess
+import time
 from dataclasses import dataclass
 from typing import Callable
 
@@ -217,6 +219,60 @@ def _run_command_preview(args, ctx):
     return f"Run shell command (no shell metacharacters, 10s timeout):\n    {args.get('command', '')}"
 
 
+def _move_file(args, ctx):
+    src = _resolve_within(args.get("source"), ctx.config)
+    dst = _resolve_within(args.get("destination"), ctx.config)
+    if not os.path.exists(src):
+        raise ToolError(f"source does not exist: {args.get('source')}")
+    parent = os.path.dirname(dst)
+    if parent and not os.path.isdir(parent):
+        raise ToolError(f"destination directory does not exist: {parent}")
+    try:
+        shutil.move(src, dst)
+    except (OSError, shutil.Error) as exc:
+        raise ToolError(f"could not move: {exc}") from exc
+    return f"moved {src} -> {dst}"
+
+
+def _move_file_preview(args, ctx):
+    try:
+        src = _resolve_within(args.get("source"), ctx.config)
+        dst = _resolve_within(args.get("destination"), ctx.config)
+    except ToolError as exc:
+        return f"WOULD BE REJECTED: {exc}"
+    warn = "  (overwrites the destination!)" if os.path.exists(dst) else ""
+    return f"Move {src}\n  -> {dst}{warn}"
+
+
+def _trash_dir(ctx):
+    return getattr(ctx.config, "trash_path", None) or os.path.expanduser("~/.local/share/aios/trash")
+
+
+def _delete_file(args, ctx):
+    real = _resolve_within(args.get("path"), ctx.config)
+    if not os.path.exists(real):
+        raise ToolError(f"no such path: {args.get('path')}")
+    trash = _trash_dir(ctx)
+    os.makedirs(trash, exist_ok=True)
+    dest = os.path.join(trash, f"{int(time.time())}-{os.path.basename(real.rstrip('/'))}")
+    try:
+        shutil.move(real, dest)
+    except (OSError, shutil.Error) as exc:
+        raise ToolError(f"could not move to trash: {exc}") from exc
+    return f"moved {real} to trash: {dest}"
+
+
+def _delete_file_preview(args, ctx):
+    try:
+        real = _resolve_within(args.get("path"), ctx.config)
+    except ToolError as exc:
+        return f"WOULD BE REJECTED: {exc}"
+    kind = "directory" if os.path.isdir(real) else "file"
+    if not os.path.exists(real):
+        return f"Delete {real} — but it does not exist"
+    return f"Delete {kind} {real}\n  (moved to trash at {_trash_dir(ctx)}, restorable — not erased)"
+
+
 # --- registry ------------------------------------------------------------
 
 class Registry:
@@ -325,5 +381,19 @@ def default_registry() -> Registry:
         "Run an allowlisted, non-interactive shell command and return its output.",
         {"type": "object", "properties": {"command": _STRING}, "required": ["command"]},
         _run_command, safe=False, preview=_run_command_preview,
+    ))
+    reg.register(Tool(
+        "move_file",
+        "Move or rename a file/folder the user can access.",
+        {"type": "object",
+         "properties": {"source": _STRING, "destination": _STRING},
+         "required": ["source", "destination"]},
+        _move_file, safe=False, preview=_move_file_preview,
+    ))
+    reg.register(Tool(
+        "delete_file",
+        "Delete a file/folder by moving it to the AIOS trash (restorable).",
+        {"type": "object", "properties": {"path": _STRING}, "required": ["path"]},
+        _delete_file, safe=False, preview=_delete_file_preview,
     ))
     return reg

@@ -41,6 +41,7 @@ run install -m 0755 "$REPO/packaging/desktop/aios-shell"          "$BIN/aios-she
 run install -m 0755 "$REPO/packaging/desktop/aios-session"        "$BIN/aios-session"
 run install -m 0755 "$REPO/packaging/desktop/aios-overlay"        "$BIN/aios-overlay"
 run install -m 0755 "$REPO/packaging/desktop/aios-overlay-toggle" "$BIN/aios-overlay-toggle"
+run install -m 0755 "$REPO/packaging/desktop/aios-launch"         "$BIN/aios-launch"
 
 say "Sway session config → $CFG/sway/config"
 run install -m 0644 "$REPO/packaging/desktop/sway/config" "$CFG/sway/config"

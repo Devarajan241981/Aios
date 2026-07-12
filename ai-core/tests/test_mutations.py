@@ -117,6 +117,53 @@ class TestMutatingTools(unittest.TestCase):
         self.assertEqual(a, b)
         self.assertNotEqual(a, c)
 
+    def test_move_and_delete_are_mutating(self):
+        self.assertFalse(self.reg.get("move_file").safe)
+        self.assertFalse(self.reg.get("delete_file").safe)
+
+    def test_move_file(self):
+        src = os.path.join(self.tmp.name, "a.txt")
+        dst = os.path.join(self.tmp.name, "b.txt")
+        with open(src, "w") as fh:
+            fh.write("data")
+        res = self.reg.execute("move_file", {"source": src, "destination": dst},
+                               self.ctx, approve=True)
+        self.assertTrue(res["ok"])
+        self.assertFalse(os.path.exists(src))
+        self.assertTrue(os.path.exists(dst))
+
+    def test_move_outside_root_denied(self):
+        src = os.path.join(self.tmp.name, "a.txt")
+        with open(src, "w") as fh:
+            fh.write("x")
+        res = self.reg.execute("move_file", {"source": src, "destination": "/etc/evil"},
+                               self.ctx, approve=True)
+        self.assertFalse(res["ok"])
+        self.assertIn("not allowed", res["error"])
+
+    def test_delete_moves_to_trash(self):
+        trash = os.path.join(self.tmp.name, "trash")
+        ctx = ToolContext(config=Config.from_env(
+            {"AIOS_ALLOWED_ROOTS": self.tmp.name, "AIOS_TRASH_PATH": trash}))
+        victim = os.path.join(self.tmp.name, "victim.txt")
+        with open(victim, "w") as fh:
+            fh.write("bye")
+        res = self.reg.execute("delete_file", {"path": victim}, ctx, approve=True)
+        self.assertTrue(res["ok"])
+        self.assertFalse(os.path.exists(victim))          # gone from original
+        trashed = os.listdir(trash)
+        self.assertEqual(len(trashed), 1)                 # recoverable in trash
+        with open(os.path.join(trash, trashed[0])) as fh:
+            self.assertEqual(fh.read(), "bye")
+
+    def test_delete_blocked_without_approval(self):
+        victim = os.path.join(self.tmp.name, "keep.txt")
+        with open(victim, "w") as fh:
+            fh.write("safe")
+        res = self.reg.execute("delete_file", {"path": victim}, self.ctx)
+        self.assertTrue(res["needs_approval"])
+        self.assertTrue(os.path.exists(victim))           # untouched
+
 
 class TestAgentApproval(unittest.TestCase):
     def setUp(self):

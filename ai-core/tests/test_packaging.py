@@ -9,6 +9,7 @@ SHELL_SCRIPTS = [
     "packaging/desktop/aios-session",
     "packaging/desktop/aios-overlay",
     "packaging/desktop/aios-overlay-toggle",
+    "packaging/desktop/aios-launch",
     "scripts/install.sh",
     "scripts/uninstall.sh",
     "scripts/asahi-bringup.sh",
@@ -72,6 +73,11 @@ class TestPackagingContent(unittest.TestCase):
         launcher = _read("packaging/desktop/aios-overlay")
         self.assertIn("aios overlay", launcher)
         self.assertIn("aios-overlay", launcher)  # stable app_id
+
+    def test_sway_binds_app_launcher(self):
+        cfg = _read("packaging/desktop/sway/config")
+        self.assertIn("$mod+d", cfg)
+        self.assertIn("aios-launch", cfg)
 
     def test_desktop_entry_runs_session(self):
         entry = _read("packaging/desktop/aios.desktop")

@@ -62,8 +62,9 @@ on the M4 is the remaining step (see [docs/asahi-bringup.md](docs/asahi-bringup.
       (Sway scratchpad + `aios overlay`, with its own persistent session)
 - [x] Native panel (swaybar): backend health, index size, battery, clock, and a
       clickable AIOS button that summons the overlay (i3bar protocol)
+- [x] App launcher (`Super+D`, wofi/fuzzel/bemenu)
 - [ ] Boot Asahi Linux on the M4 and run the bring-up (needs hardware)
-- [ ] App launcher + workspace switcher in the panel
+- [ ] Workspace switcher UI in the panel
 - [ ] Theming (light/dark, accent) beyond the current web UI
 
 **Exit criteria:** log into an AIOS session on the M4 and invoke the assistant
@@ -85,7 +86,7 @@ Let the assistant *do* things, safely. Shipped across Phase 2.5 / 2.6 (see
 - [x] Richer previews: unified diffs for `write_file` overwrites, colored in the
       CLI and the web-UI approval card
 - [x] Tool-invocation audit log (JSONL) with `aios audit` and a `/v1/audit` endpoint
-- [ ] Trash-based delete/move tools behind the same gate
+- [x] Trash-based `delete_file` / `move_file` tools behind the same gate
 - [ ] Natural-language automations → scheduled jobs (systemd timers)
 - [ ] Per-tool / per-session permission scopes
 

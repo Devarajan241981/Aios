@@ -32,13 +32,13 @@ fi
 
 say "Installing system packages (Sway session, terminal, browser, tooling)"
 if command -v dnf >/dev/null 2>&1; then
-  run sudo dnf install -y sway foot firefox python3 git curl
+  run sudo dnf install -y sway foot firefox wofi python3 git curl
 elif command -v apt-get >/dev/null 2>&1; then
   run sudo apt-get update
-  run sudo apt-get install -y sway foot firefox-esr python3 git curl
+  run sudo apt-get install -y sway foot firefox-esr wofi python3 git curl
 else
   echo "No supported package manager (dnf/apt). Install manually:" >&2
-  echo "  sway foot firefox python3 git curl" >&2
+  echo "  sway foot firefox wofi python3 git curl" >&2
 fi
 
 say "Optional: install Ollama for on-device models"

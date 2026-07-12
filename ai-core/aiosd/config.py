@@ -32,6 +32,10 @@ def _default_audit_path() -> str:
     return os.path.join(_data_dir(), "audit.log")
 
 
+def _default_trash_path() -> str:
+    return os.path.join(_data_dir(), "trash")
+
+
 @dataclass(frozen=True)
 class Config:
     host: str = "127.0.0.1"          # loopback only — never bind public by default
@@ -59,6 +63,7 @@ class Config:
     max_body_bytes: int = 4_000_000  # reject oversized request bodies
     audit_enabled: bool = True
     audit_path: str = field(default_factory=_default_audit_path)
+    trash_path: str = field(default_factory=_default_trash_path)
 
     @classmethod
     def from_env(cls, env: dict | None = None) -> "Config":
@@ -91,6 +96,7 @@ class Config:
             max_body_bytes=int(env.get("AIOS_MAX_BODY_BYTES", cls.max_body_bytes)),
             audit_enabled=_truthy(env.get("AIOS_AUDIT", "on")),
             audit_path=env.get("AIOS_AUDIT_PATH") or _default_audit_path(),
+            trash_path=env.get("AIOS_TRASH_PATH") or _default_trash_path(),
         )
 
     def redacted_dict(self) -> dict:

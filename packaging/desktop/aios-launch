@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# aios-launch — app launcher for the AIOS session. Uses whatever Wayland
+# launcher is installed. Bound to Super+D in the AIOS Sway config.
+set -euo pipefail
+
+if command -v wofi >/dev/null 2>&1; then
+  exec wofi --show drun
+elif command -v fuzzel >/dev/null 2>&1; then
+  exec fuzzel
+elif command -v bemenu-run >/dev/null 2>&1; then
+  exec bemenu-run
+elif command -v wmenu-run >/dev/null 2>&1; then
+  exec wmenu-run
+else
+  echo "aios-launch: no launcher found (install wofi, fuzzel, or bemenu)." >&2
+  exit 1
+fi

@@ -1,5 +1,7 @@
 # AIOS — a privacy-first, local AI operating system
 
+[![CI](https://github.com/Devarajan241981/Aios/actions/workflows/ci.yml/badge.svg)](https://github.com/Devarajan241981/Aios/actions/workflows/ci.yml)
+
 AIOS is an AI-native desktop environment where an on-device assistant is a
 first-class part of the OS, not a bolt-on app. Everything runs **locally by
 default** — no telemetry, no cloud round-trips, your data never leaves the
@@ -34,7 +36,7 @@ no kernel work, no cloud. The rest is on the [roadmap](ROADMAP.md).
 | RAG: assistant answers grounded in your indexed files | ✅ working |
 | **Persistent chat sessions** (SQLite, resume across restarts) | ✅ working, tested |
 | **Tool use / agent loop** (sandboxed read tools, backend-agnostic) | ✅ working, tested |
-| **Mutating tools** (`write_file`, `run_command`) with preview-before-run | ✅ working, tested |
+| **Mutating tools** (`write_file`, `run_command`, `move_file`, `delete_file`→trash) with preview-before-run | ✅ working, tested |
 | **Hardening**: bearer-token auth, structured logging, body limits, `/version` | ✅ working, tested |
 | **Audit log** — every tool run + approval recorded (JSONL), `aios audit` | ✅ working, tested |
 | Wayland desktop shell on Asahi | ⏳ planned (Phase 3) |
@@ -157,6 +159,7 @@ Every setting is also an environment variable (local-first defaults):
 | `AIOS_MAX_BODY_BYTES` | `4000000` | reject request bodies larger than this |
 | `AIOS_AUDIT` | `on` | record tool activity to an audit log |
 | `AIOS_AUDIT_PATH` | `~/.local/share/aios/audit.log` | audit log location |
+| `AIOS_TRASH_PATH` | `~/.local/share/aios/trash` | where `delete_file` moves files |
 
 ## Repository layout
 
@@ -197,7 +200,7 @@ many documents are indexed, battery, and the clock — with an **AIOS button** y
 can click to summon the assistant. And you can press **`Super+Space`** to summon
 it as a small floating overlay over whatever you're doing (`Ctrl-D` hides it; it
 keeps its own memory across summons). The overlay also works standalone in any
-terminal: `aios overlay`.
+terminal: `aios overlay`. **`Super+D`** opens an app launcher (wofi/fuzzel/bemenu).
 
 The bring-up scripts and session config are written and syntax-checked here; the
 final run happens on the M4. Full guide: [docs/asahi-bringup.md](docs/asahi-bringup.md).
