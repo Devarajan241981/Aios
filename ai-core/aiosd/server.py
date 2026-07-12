@@ -30,9 +30,12 @@ import time
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+from urllib.parse import parse_qs, urlparse
+
 from . import __version__
 from .agent import Agent
 from .assistant import Assistant
+from .audit import AuditLog
 from .backends import Backend, BackendError, make_backend
 from .config import Config, load_config
 from .embeddings import Embedder, EmbeddingError, make_embedder
@@ -60,6 +63,7 @@ class AppState:
     storage: Storage
     registry: Registry
     agent: Agent
+    audit: AuditLog
     lock: threading.Lock
 
 
@@ -171,6 +175,10 @@ def make_handler(state: AppState):
             elif self.path == "/v1/tools":
                 self._json(200, {"enabled": cfg.tools_enabled,
                                  "tools": state.registry.describe()})
+            elif self.path.split("?")[0] == "/v1/audit":
+                q = parse_qs(urlparse(self.path).query)
+                n = int(q.get("n", ["50"])[0])
+                self._json(200, {"events": state.audit.tail(n)})
             elif self.path == "/v1/sessions":
                 self._json(200, {"sessions": state.storage.list_sessions()})
             elif self.path.startswith("/v1/sessions/"):
@@ -344,12 +352,14 @@ def build_state(config) -> AppState:
     storage = Storage(config.db_path)
     registry = default_registry()
     tool_ctx = ToolContext(config=config, retriever=retriever)
-    agent = Agent(backend, registry, tool_ctx, config)
+    audit = AuditLog(config.audit_path, config.audit_enabled)
+    agent = Agent(backend, registry, tool_ctx, config, audit=audit)
 
     return AppState(
         config=config, backend=backend, embedder=embedder,
         vector_store=vector_store, retriever=retriever, assistant=assistant,
-        storage=storage, registry=registry, agent=agent, lock=threading.Lock(),
+        storage=storage, registry=registry, agent=agent, audit=audit,
+        lock=threading.Lock(),
     )
 
 

@@ -154,9 +154,11 @@ class TestApprovalOverHTTP(unittest.TestCase):
     def setUpClass(cls):
         cls.tmp = tempfile.TemporaryDirectory()
         cls.target = os.path.join(cls.tmp.name, "http.txt")
+        cls.audit_path = os.path.join(cls.tmp.name, "audit.log")
         cfg = Config.from_env({"AIOS_BACKEND": "mock", "AIOS_PORT": "0",
                                "AIOS_DB_PATH": ":memory:",
-                               "AIOS_ALLOWED_ROOTS": cls.tmp.name})
+                               "AIOS_ALLOWED_ROOTS": cls.tmp.name,
+                               "AIOS_AUDIT_PATH": cls.audit_path})
         cls.httpd = build_server(cfg)
         # inject a backend that will request a write_file tool call
         cls.httpd.aios_state.agent.backend = StatelessWriteBackend(cls.target, "hello http")
@@ -179,6 +181,10 @@ class TestApprovalOverHTTP(unittest.TestCase):
         with urllib.request.urlopen(req) as resp:
             return resp.status, json.loads(resp.read().decode())
 
+    def _audit(self):
+        with urllib.request.urlopen(f"http://127.0.0.1:{self.port}/v1/audit") as resp:
+            return json.loads(resp.read().decode())["events"]
+
     def test_two_step_approval(self):
         # step 1: request halts for approval, nothing written
         code, body = self._post({"prompt": "please write the file", "use_tools": True})
@@ -196,6 +202,15 @@ class TestApprovalOverHTTP(unittest.TestCase):
         self.assertTrue(os.path.exists(self.target))
         with open(self.target) as fh:
             self.assertEqual(fh.read(), "hello http")
+
+        # the audit log records both the approval halt and the execution
+        events = self._audit()
+        kinds = [(e.get("event"), e.get("tool")) for e in events]
+        self.assertIn(("pending", "write_file"), kinds)
+        tool_events = [e for e in events if e.get("event") == "tool" and e.get("tool") == "write_file"]
+        self.assertTrue(tool_events)
+        self.assertTrue(tool_events[-1]["ok"])
+        self.assertTrue(tool_events[-1]["approved"])
 
 
 if __name__ == "__main__":

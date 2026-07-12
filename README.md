@@ -35,6 +35,7 @@ no kernel work, no cloud. The rest is on the [roadmap](ROADMAP.md).
 | **Tool use / agent loop** (sandboxed read tools, backend-agnostic) | ✅ working, tested |
 | **Mutating tools** (`write_file`, `run_command`) with preview-before-run | ✅ working, tested |
 | **Hardening**: bearer-token auth, structured logging, body limits, `/version` | ✅ working, tested |
+| **Audit log** — every tool run + approval recorded (JSONL), `aios audit` | ✅ working, tested |
 | Wayland desktop shell on Asahi | ⏳ planned (Phase 3) |
 
 ## Quick start (2 minutes)
@@ -147,6 +148,8 @@ Every setting is also an environment variable (local-first defaults):
 | `AIOS_TOKEN` | *(none)* | if set, require `Authorization: Bearer <token>` |
 | `AIOS_LOG_LEVEL` | `INFO` | daemon log level |
 | `AIOS_MAX_BODY_BYTES` | `4000000` | reject request bodies larger than this |
+| `AIOS_AUDIT` | `on` | record tool activity to an audit log |
+| `AIOS_AUDIT_PATH` | `~/.local/share/aios/audit.log` | audit log location |
 
 ## Repository layout
 

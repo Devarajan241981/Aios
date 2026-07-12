@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 
+from .audit import summarize_args
 from .tools import signature
 
 
@@ -31,12 +32,17 @@ class Agent:
     runs exactly what they previewed.
     """
 
-    def __init__(self, backend, registry, ctx, config, max_steps: int = 5):
+    def __init__(self, backend, registry, ctx, config, max_steps: int = 5, audit=None):
         self.backend = backend
         self.registry = registry
         self.ctx = ctx
         self.config = config
         self.max_steps = max_steps
+        self.audit = audit
+
+    def _record(self, event):
+        if self.audit is not None:
+            self.audit.record(event)
 
     def _approved(self, name, args, approved, approve_all):
         return approve_all or signature(name, args) in approved
@@ -75,6 +81,10 @@ class Agent:
                         "signature": signature(call.get("name"), args),
                     })
             if pending:
+                for p in pending:
+                    self._record({"event": "pending", "tool": p["tool"],
+                                  "signature": p["signature"],
+                                  "args": summarize_args(p["args"])})
                 return {"status": "needs_approval", "pending": pending, "steps": steps}
 
             conversation.append(
@@ -86,6 +96,12 @@ class Agent:
                 approve = self._approved(name, args, approved, approve_all)
                 result = self.registry.execute(name, args, self.ctx, approve=approve)
                 steps.append({"tool": name, "args": args, "result": result})
+                tool = self.registry.get(name)
+                self._record({"event": "tool", "tool": name,
+                              "safe": (tool.safe if tool else None),
+                              "approved": approve, "ok": result.get("ok"),
+                              "error": result.get("error"),
+                              "args": summarize_args(args)})
                 conversation.append({
                     "role": "tool",
                     "tool_call_id": call.get("id") or name,

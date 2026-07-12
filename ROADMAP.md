@@ -82,9 +82,10 @@ Let the assistant *do* things, safely. Shipped across Phase 2.5 / 2.6 (see
 - [x] Interactive CLI approval loop (`aios ask --tools`) + non-interactive `--approve`
 - [x] Richer previews: unified diffs for `write_file` overwrites, colored in the
       CLI and the web-UI approval card
+- [x] Tool-invocation audit log (JSONL) with `aios audit` and a `/v1/audit` endpoint
 - [ ] Trash-based delete/move tools behind the same gate
 - [ ] Natural-language automations → scheduled jobs (systemd timers)
-- [ ] Per-tool / per-session permission scopes + tool-invocation audit log
+- [ ] Per-tool / per-session permission scopes
 
 ## Phase 5 — Distribution & polish
 

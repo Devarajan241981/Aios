@@ -380,6 +380,29 @@ def cmd_config(_args) -> int:
     return 0
 
 
+def cmd_audit(args) -> int:
+    import datetime
+    code, body = request("GET", f"/v1/audit?n={args.n}", timeout=8)
+    if code is None or code >= 400:
+        print(body.get("error", "error"), file=sys.stderr)
+        return 1
+    events = body["events"]
+    if not events:
+        print("no tool activity recorded yet")
+        return 0
+    for e in events:
+        when = datetime.datetime.fromtimestamp(e.get("ts", 0)).strftime("%m-%d %H:%M:%S")
+        if e.get("event") == "tool":
+            status = "ok" if e.get("ok") else f"ERROR: {e.get('error')}"
+            approved = " (approved)" if e.get("approved") else ""
+            print(f"{when}  {e.get('tool')}{approved} → {status}")
+        elif e.get("event") == "pending":
+            print(f"{when}  {e.get('tool')} — awaited approval [{e.get('signature')}]")
+        else:
+            print(f"{when}  {e}")
+    return 0
+
+
 def cmd_tools(_args) -> int:
     code, body = request("GET", "/v1/tools", timeout=8)
     if code is None or code >= 400:
@@ -416,6 +439,10 @@ def main(argv=None) -> int:
     sub.add_parser("sessions", help="list saved chat sessions").set_defaults(func=cmd_sessions)
     sub.add_parser("tools", help="list available tools").set_defaults(func=cmd_tools)
     sub.add_parser("config", help="show config file + effective settings").set_defaults(func=cmd_config)
+
+    audit = sub.add_parser("audit", help="show recent tool activity")
+    audit.add_argument("-n", type=int, default=50, help="number of events (default 50)")
+    audit.set_defaults(func=cmd_audit)
 
     history = sub.add_parser("history", help="print a session's transcript")
     history.add_argument("session", help="session id")
