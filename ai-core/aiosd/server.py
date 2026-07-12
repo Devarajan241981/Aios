@@ -32,7 +32,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from urllib.parse import parse_qs, urlparse
 
-from . import __version__
+from . import API_VERSION, __version__
 from .agent import Agent
 from .assistant import Assistant
 from .audit import AuditLog
@@ -159,6 +159,7 @@ def make_handler(state: AppState):
             if self.path == "/health":
                 self._json(200, {
                     "status": "ok", "service": "aiosd", "version": __version__,
+                    "api_version": API_VERSION,
                     "backend": state.backend.health(),
                     "index": {"documents": len(state.vector_store),
                               "embeddings": state.embedder.name},
@@ -166,6 +167,7 @@ def make_handler(state: AppState):
                 })
             elif self.path == "/version":
                 self._json(200, {"version": __version__,
+                                 "api_version": API_VERSION,
                                  "python": platform.python_version()})
             elif self.path == "/config":
                 self._json(200, cfg.redacted_dict())

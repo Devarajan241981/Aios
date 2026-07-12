@@ -73,7 +73,9 @@ and versioning this API (`Platform API v1`) is a Stage-1 deliverable.
 - The **HAL** and **Platform API** boundaries exist and are enforced.
 - Everything between them that is practical to own, we own (AI runtime, memory,
   tools, sessions, audit, shell, CLI, web UI, panel, overlay, launcher).
-- Exit: Platform API v1 frozen; every dependency has a matrix row + isolating seam.
+- Exit criterion — **Platform API v1 frozen** ([04](04-platform-api-v1.md),
+  ADR-0007) ✅; every dependency has a matrix row + isolating seam (in progress:
+  HAL ✅, ServiceManager ✅, SessionStore ✅).
 
 ### Stage 2 — Own the userland, layer by layer
 Replace, **behind existing interfaces**, in rough priority order (value ×

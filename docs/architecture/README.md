@@ -18,11 +18,17 @@ below two boundaries we own. Everything between them is AIOS.
    every dependency, its isolating seam, replacement difficulty, and future.
 4. **[Kernel Design & AKI](03-kernel-design.md)** — the eventual kernel, designed
    now (not built), and the interface that keeps Linux swappable.
+5. **[Platform API v1](04-platform-api-v1.md)** — the frozen app-facing contract
+   and its stability policy.
 
-Decision records: [ADR-0003](../decisions/0003-layered-architecture-and-hal.md)
-(layered architecture & HAL), [ADR-0004](../decisions/0004-eventual-kernel-and-aki.md)
-(eventual kernel & AKI). Earlier: [ADR-0001](../decisions/0001-scope-and-strategy.md),
-[ADR-0002](../decisions/0002-tools-safety.md).
+Decision records: [0003](../decisions/0003-layered-architecture-and-hal.md)
+(layered architecture & HAL), [0004](../decisions/0004-eventual-kernel-and-aki.md)
+(eventual kernel & AKI), [0005](../decisions/0005-service-manager-seam.md)
+(ServiceManager seam), [0006](../decisions/0006-session-store-seam.md)
+(SessionStore seam), [0007](../decisions/0007-freeze-platform-api-v1.md)
+(freeze Platform API v1). Earlier:
+[0001](../decisions/0001-scope-and-strategy.md),
+[0002](../decisions/0002-tools-safety.md).
 
 ## The two boundaries, in one picture
 
