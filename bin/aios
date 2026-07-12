@@ -417,6 +417,19 @@ def cmd_audit(args) -> int:
     return 0
 
 
+def cmd_grant(args) -> int:
+    payload = {"tool": args.tool, "revoke": args.revoke}
+    code, body = request("POST", f"/v1/sessions/{args.session}/grants", payload, timeout=8)
+    if code is None or code >= 400:
+        print(body.get("error", "error"), file=sys.stderr)
+        return 1
+    verb = "revoked" if args.revoke else "granted"
+    grants = body.get("grants", [])
+    print(f"{verb} '{args.tool}' for session {args.session}")
+    print(f"session now auto-approves: {', '.join(grants) if grants else '(none)'}")
+    return 0
+
+
 def cmd_tools(_args) -> int:
     code, body = request("GET", "/v1/tools", timeout=8)
     if code is None or code >= 400:
@@ -462,6 +475,16 @@ def main(argv=None) -> int:
     history = sub.add_parser("history", help="print a session's transcript")
     history.add_argument("session", help="session id")
     history.set_defaults(func=cmd_history)
+
+    grant = sub.add_parser("grant", help="always allow a tool in a session")
+    grant.add_argument("session", help="session id")
+    grant.add_argument("tool", help="tool name (e.g. write_file)")
+    grant.set_defaults(func=cmd_grant, revoke=False)
+
+    revoke = sub.add_parser("revoke", help="stop auto-allowing a tool in a session")
+    revoke.add_argument("session", help="session id")
+    revoke.add_argument("tool", help="tool name")
+    revoke.set_defaults(func=cmd_grant, revoke=True)
 
     index = sub.add_parser("index", help="index files/folders into semantic memory")
     index.add_argument("paths", nargs="*", help="files or folders to index")

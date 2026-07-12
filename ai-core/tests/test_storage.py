@@ -47,6 +47,22 @@ class TestStorage(unittest.TestCase):
         self.assertIsNone(self.s.get_session(sid))
         self.assertEqual(self.s.get_messages(sid), [])  # cascade removed messages
 
+    def test_grants(self):
+        sid = self.s.create_session()
+        self.s.grant_tool(sid, "write_file")
+        self.s.grant_tool(sid, "write_file")  # idempotent
+        self.s.grant_tool(sid, "move_file")
+        self.assertEqual(self.s.list_grants(sid), ["move_file", "write_file"])
+        self.assertTrue(self.s.revoke_tool(sid, "move_file"))
+        self.assertEqual(self.s.list_grants(sid), ["write_file"])
+        self.assertFalse(self.s.revoke_tool(sid, "nope"))
+
+    def test_grants_cascade_on_delete(self):
+        sid = self.s.create_session()
+        self.s.grant_tool(sid, "write_file")
+        self.s.delete_session(sid)
+        self.assertEqual(self.s.list_grants(sid), [])
+
     def test_list_orders_by_recency(self):
         a = self.s.create_session(title="A")
         b = self.s.create_session(title="B")

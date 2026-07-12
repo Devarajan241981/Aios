@@ -31,6 +31,12 @@ CREATE TABLE IF NOT EXISTS messages (
     created_at REAL NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id, id);
+CREATE TABLE IF NOT EXISTS grants (
+    session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    tool       TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    PRIMARY KEY (session_id, tool)
+);
 """
 
 DEFAULT_TITLE = "New chat"
@@ -133,6 +139,36 @@ class Storage:
         if limit is not None:
             messages = messages[-limit:]
         return messages
+
+    # -- permission grants (per-session tool scopes) ----------------------
+    def grant_tool(self, session_id: str, tool: str) -> None:
+        now = time.time()
+        with self._lock:
+            self._conn.execute(
+                "INSERT OR IGNORE INTO sessions(id, title, created_at, updated_at) "
+                "VALUES(?, ?, ?, ?)",
+                (session_id, DEFAULT_TITLE, now, now),
+            )
+            self._conn.execute(
+                "INSERT OR IGNORE INTO grants(session_id, tool, created_at) VALUES(?, ?, ?)",
+                (session_id, tool, now),
+            )
+            self._conn.commit()
+
+    def revoke_tool(self, session_id: str, tool: str) -> bool:
+        with self._lock:
+            cur = self._conn.execute(
+                "DELETE FROM grants WHERE session_id=? AND tool=?", (session_id, tool)
+            )
+            self._conn.commit()
+            return cur.rowcount > 0
+
+    def list_grants(self, session_id: str):
+        with self._lock:
+            rows = self._conn.execute(
+                "SELECT tool FROM grants WHERE session_id=? ORDER BY tool", (session_id,)
+            ).fetchall()
+        return [r[0] for r in rows]
 
     def close(self) -> None:
         with self._lock:

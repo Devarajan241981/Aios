@@ -207,6 +207,8 @@ def make_handler(state: AppState):
             elif self.path == "/v1/sessions":
                 sid = state.storage.create_session(title=data.get("title"))
                 self._json(201, state.storage.get_session(sid))
+            elif self.path.startswith("/v1/sessions/") and self.path.endswith("/grants"):
+                self._handle_grants(self.path[len("/v1/sessions/"):-len("/grants")], data)
             else:
                 self._json(404, {"error": "not found"})
 
@@ -224,7 +226,21 @@ def make_handler(state: AppState):
                 self._json(404, {"error": "no such session"})
                 return
             self._json(200, {"session": session,
-                             "messages": state.storage.get_messages(sid)})
+                             "messages": state.storage.get_messages(sid),
+                             "grants": state.storage.list_grants(sid)})
+
+        def _handle_grants(self, sid, data):
+            tool = (data.get("tool") or "").strip()
+            if not tool:
+                self._json(400, {"error": "missing 'tool'"})
+                return
+            if data.get("revoke"):
+                state.storage.revoke_tool(sid, tool)
+                state.audit.record({"event": "revoke", "session": sid, "tool": tool})
+            else:
+                state.storage.grant_tool(sid, tool)
+                state.audit.record({"event": "grant", "session": sid, "tool": tool})
+            self._json(200, {"grants": state.storage.list_grants(sid)})
 
         # -- chat ---------------------------------------------------------
         def _handle_chat(self, data):
@@ -250,10 +266,12 @@ def make_handler(state: AppState):
             try:
                 if use_tools:
                     messages = state.assistant.build_messages(prompt, history)
+                    granted = state.storage.list_grants(session_id) if session_id else []
                     result = state.agent.run(
                         messages,
                         approved=data.get("approved_signatures") or [],
                         approve_all=bool(data.get("approve")),
+                        granted_tools=granted,
                     )
                     if result["status"] == "needs_approval":
                         # No side effects happened; caller must approve to proceed.

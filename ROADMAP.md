@@ -88,7 +88,8 @@ Let the assistant *do* things, safely. Shipped across Phase 2.5 / 2.6 (see
 - [x] Tool-invocation audit log (JSONL) with `aios audit` and a `/v1/audit` endpoint
 - [x] Trash-based `delete_file` / `move_file` tools behind the same gate
 - [ ] Natural-language automations → scheduled jobs (systemd timers)
-- [ ] Per-tool / per-session permission scopes
+- [x] Per-session permission scopes (`aios grant`/`revoke`, "always allow" in
+      the web UI) — a session can auto-approve a tool it has granted
 
 ## Phase 5 — Distribution & polish
 

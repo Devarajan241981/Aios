@@ -69,6 +69,7 @@ INDEX_HTML = r"""<!doctype html>
   .approval .btns{display:flex;gap:8px;margin-top:10px}
   .btn{padding:7px 14px;border-radius:8px;border:1px solid var(--border);cursor:pointer;font-size:13px}
   .btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+  .btn.allow{background:transparent;color:var(--accent);border-color:var(--accent)}
   .btn.ghost{background:transparent;color:var(--text)}
   .composer{border-top:1px solid var(--border);padding:12px 16px;background:var(--panel)}
   .composer .row{max-width:760px;margin:0 auto;display:flex;gap:10px;align-items:flex-end}
@@ -231,12 +232,20 @@ function renderApproval(text, pending, approved){
   const card=document.createElement('div'); card.className='approval';
   let html='<h4>The assistant wants to run '+pending.length+' action(s):</h4>';
   pending.forEach(p=>{ html+='<div class="tool">▸ '+escapeHtml(p.tool)+'</div><pre>'+formatPreview(p.preview)+'</pre>'; });
-  html+='<div class="btns"><button class="btn primary">Approve</button><button class="btn ghost">Deny</button></div>';
+  html+='<div class="btns"><button class="btn primary">Approve once</button>'+
+        '<button class="btn allow">Always allow</button>'+
+        '<button class="btn ghost">Deny</button></div>';
   card.innerHTML=html; $('#wrap').appendChild(card); scroll();
   card.querySelector('.primary').onclick=async()=>{
     card.remove();
     const sigs=approved.concat(pending.map(p=>p.signature));
     setBusy(true); try{ await sendTools(text, sigs); }catch(e){ bubble('assistant','⚠️ '+e.message); } setBusy(false);
+  };
+  card.querySelector('.allow').onclick=async()=>{
+    card.remove();
+    const tools=[...new Set(pending.map(p=>p.tool))];
+    for(const t of tools){ await api('POST','/v1/sessions/'+session+'/grants',{tool:t}); }
+    setBusy(true); try{ await sendTools(text, approved); }catch(e){ bubble('assistant','⚠️ '+e.message); } setBusy(false);
   };
   card.querySelector('.ghost').onclick=()=>{ card.remove(); bubble('assistant','Declined — nothing was changed.'); };
 }

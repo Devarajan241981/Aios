@@ -105,6 +105,25 @@ class TestSessionsAndTools(unittest.TestCase):
         code, _ = self.c.call("GET", f"/v1/sessions/{sid}")
         self.assertEqual(code, 404)
 
+    def test_session_grants(self):
+        _, sess = self.c.call("POST", "/v1/sessions", {"title": "g"})
+        sid = sess["id"]
+        code, body = self.c.call("POST", f"/v1/sessions/{sid}/grants", {"tool": "write_file"})
+        self.assertEqual(code, 200)
+        self.assertIn("write_file", body["grants"])
+        # shows up on the session
+        _, got = self.c.call("GET", f"/v1/sessions/{sid}")
+        self.assertIn("write_file", got["grants"])
+        # revoke
+        code, body = self.c.call("POST", f"/v1/sessions/{sid}/grants",
+                                 {"tool": "write_file", "revoke": True})
+        self.assertEqual(body["grants"], [])
+
+    def test_grants_missing_tool(self):
+        _, sess = self.c.call("POST", "/v1/sessions", {})
+        code, _ = self.c.call("POST", f"/v1/sessions/{sess['id']}/grants", {})
+        self.assertEqual(code, 400)
+
     def test_chat_with_tools_returns_steps(self):
         # mock backend uses no tools, so steps is empty but the shape is present
         code, body = self.c.call("POST", "/v1/chat", {"prompt": "hi", "use_tools": True})

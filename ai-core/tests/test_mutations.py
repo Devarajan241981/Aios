@@ -195,6 +195,18 @@ class TestAgentApproval(unittest.TestCase):
         self.assertEqual(result["status"], "complete")
         self.assertTrue(os.path.exists(self.target))
 
+    def test_granted_tool_auto_approves(self):
+        result = self.agent.run([{"role": "user", "content": "write it"}],
+                                granted_tools={"write_file"})
+        self.assertEqual(result["status"], "complete")
+        self.assertTrue(os.path.exists(self.target))
+
+    def test_grant_of_other_tool_does_not_approve(self):
+        result = self.agent.run([{"role": "user", "content": "write it"}],
+                                granted_tools={"move_file"})
+        self.assertEqual(result["status"], "needs_approval")
+        self.assertFalse(os.path.exists(self.target))
+
 
 class TestApprovalOverHTTP(unittest.TestCase):
     @classmethod

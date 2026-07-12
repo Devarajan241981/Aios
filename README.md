@@ -94,6 +94,10 @@ you approve, verified by a content hash, so you never run something different
 from what you saw. `run_command` is additionally restricted to an allowlist
 (`AIOS_ALLOWED_COMMANDS`). Full model: [docs/decisions/0002-tools-safety.md](docs/decisions/0002-tools-safety.md).
 
+To avoid re-approving within a trusted conversation, grant a tool to a session:
+`aios grant <session> write_file` (or "Always allow" in the web-UI approval
+dialog); revoke with `aios revoke <session> write_file`.
+
 Not sure what's set up? Diagnose everything in one command:
 
 ```bash

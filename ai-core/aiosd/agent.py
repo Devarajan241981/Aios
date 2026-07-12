@@ -44,11 +44,12 @@ class Agent:
         if self.audit is not None:
             self.audit.record(event)
 
-    def _approved(self, name, args, approved, approve_all):
-        return approve_all or signature(name, args) in approved
+    def _approved(self, name, args, approved, approve_all, granted):
+        return approve_all or name in granted or signature(name, args) in approved
 
-    def run(self, messages, approved=None, approve_all: bool = False) -> dict:
+    def run(self, messages, approved=None, approve_all: bool = False, granted_tools=None) -> dict:
         approved = set(approved or ())
+        granted = set(granted_tools or ())
         conversation = list(messages)
         steps = []
         content = ""
@@ -72,7 +73,7 @@ class Agent:
                 tool = self.registry.get(call.get("name"))
                 args = call.get("arguments") or {}
                 if tool is not None and not tool.safe and not self._approved(
-                    call.get("name"), args, approved, approve_all
+                    call.get("name"), args, approved, approve_all, granted
                 ):
                     pending.append({
                         "tool": call.get("name"),
@@ -93,7 +94,7 @@ class Agent:
             for call in tool_calls:
                 name = call.get("name")
                 args = call.get("arguments") or {}
-                approve = self._approved(name, args, approved, approve_all)
+                approve = self._approved(name, args, approved, approve_all, granted)
                 result = self.registry.execute(name, args, self.ctx, approve=approve)
                 steps.append({"tool": name, "args": args, "result": result})
                 tool = self.registry.get(name)
