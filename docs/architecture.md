@@ -1,4 +1,9 @@
-# AIOS Architecture
+# AIOS Architecture (implementation view)
+
+> **For the long-term OS architecture** — the independence path, layer stack,
+> Engineering Constitution, Dependency Replacement Matrix, and kernel design —
+> see **[docs/architecture/](architecture/)**. This file is the *implementation
+> view* of what runs today.
 
 This document describes the target architecture and the part that exists today.
 It corrects several technical points from the original research report.

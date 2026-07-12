@@ -14,6 +14,17 @@ machine.
 > on Apple Silicon). The part that makes it *AIOS* is the AI core, the desktop
 > shell, and how they're wired into the system. That is what this repo builds.
 
+> **Long-term north star.** AIOS is designed to evolve from a Linux-hosted
+> foundation into an increasingly *independent* OS over 10+ years — usable at
+> every stage — by owning every interface and keeping every dependency
+> replaceable. Linux is a **temporary hardware layer** below two AIOS-owned
+> boundaries (the **Platform API** above, the **HAL/AKI** below). The governing
+> design lives in **[docs/architecture/](docs/architecture/)**: the
+> [Engineering Constitution](docs/architecture/00-engineering-constitution.md),
+> the [Layered Architecture](docs/architecture/01-layered-architecture.md), the
+> [Dependency Replacement Matrix](docs/architecture/02-dependency-replacement-matrix.md),
+> and the [Kernel Design](docs/architecture/03-kernel-design.md).
+
 ## Status
 
 **Phase 1 — the AI core — is running today, on macOS, on your Mac.** No Linux,
