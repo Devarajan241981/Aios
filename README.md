@@ -104,6 +104,15 @@ Not sure what's set up? Diagnose everything in one command:
 ./bin/aios doctor   # checks daemon, backend, model, index, tools, PATH, Ollama…
 ```
 
+Schedule a prompt to run on a timer (systemd user timers; runs plain `aios ask`
+so a schedule can never mutate anything unattended):
+
+```bash
+./bin/aios schedule add morning --at "daily 08:00" --prompt "summarize my unread email"
+./bin/aios schedule list
+./bin/aios schedule remove morning
+```
+
 Run the tests (fully offline, no Ollama required):
 
 ```bash
