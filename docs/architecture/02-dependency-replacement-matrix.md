@@ -23,7 +23,7 @@ Hardware → [AKI] → Kernel(Linux) → [HAL] → System services (AIOS) → [P
 | 3 | Model inference | Don't own a trained-model runtime yet | `Backend` interface | 🟡 Ollama / llama.cpp / mock | Low | AIOS inference engine (llama.cpp as lib → own) | 2 |
 | 4 | Embeddings | Vector search | `Embedder` interface | ✅ hashing (ours) + 🟡 Ollama | Low | AIOS embedder | 1–2 |
 | 5 | Vector store | Semantic memory | `VectorStore` interface | ✅ ours (pure Python) | Trivial | AIOS ANN engine | 2 |
-| 6 | Persistence | Sessions/audit | `Storage` interface | 🟡 SQLite (stdlib) | Low | AIOS store (keep SQLite if fine) | 2 |
+| 6 | Persistence | Sessions/messages/grants | **`SessionStore` interface** (ours) — `aiosd/storage.py` | 🟡 `SqliteStore` behind it (only class that knows SQLite) | Low | AIOS store (keep SQLite unless it blocks us) | 2 |
 | 7 | Config | Settings | `Config` + `load_config` (ours) | ✅ ours (TOML/env) | — | AIOS settings service | 1–2 |
 | 8 | Tools / capabilities | Let the AI act, safely | `Tool`, capability/approval model (ours) | ✅ ours | — | AIOS capability system (kernel-aligned) | 1 |
 | 9 | Audit | Trust/observability | `AuditLog` (ours) | ✅ ours | — | AIOS audit service | 1 |

@@ -41,7 +41,7 @@ from .config import Config, load_config
 from .embeddings import Embedder, EmbeddingError, make_embedder
 from .indexer import index_paths
 from .retriever import Retriever
-from .storage import Storage
+from .storage import SessionStore, open_store
 from .store import VectorStore
 from .tools import Registry, ToolContext, default_registry
 from .ui import index_html
@@ -60,7 +60,7 @@ class AppState:
     vector_store: VectorStore
     retriever: object
     assistant: Assistant
-    storage: Storage
+    storage: SessionStore
     registry: Registry
     agent: Agent
     audit: AuditLog
@@ -367,7 +367,7 @@ def build_state(config) -> AppState:
         if config.rag_enabled else None
     )
     assistant = Assistant(backend, config, retriever=retriever)
-    storage = Storage(config.db_path)
+    storage = open_store(config)
     registry = default_registry()
     tool_ctx = ToolContext(config=config, retriever=retriever)
     audit = AuditLog(config.audit_path, config.audit_enabled)

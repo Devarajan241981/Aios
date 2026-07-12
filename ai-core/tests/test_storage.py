@@ -1,11 +1,24 @@
 import unittest
 
-from aiosd.storage import Storage
+from aiosd.config import Config
+from aiosd.storage import SessionStore, SqliteStore, open_store
+
+
+class TestSeam(unittest.TestCase):
+    def test_sqlite_is_a_session_store(self):
+        store = SqliteStore(":memory:")
+        self.assertIsInstance(store, SessionStore)
+        store.close()
+
+    def test_open_store_returns_session_store(self):
+        store = open_store(Config.from_env({"AIOS_DB_PATH": ":memory:"}))
+        self.assertIsInstance(store, SessionStore)
+        store.close()
 
 
 class TestStorage(unittest.TestCase):
     def setUp(self):
-        self.s = Storage(":memory:")
+        self.s = SqliteStore(":memory:")
 
     def tearDown(self):
         self.s.close()

@@ -1,11 +1,12 @@
-"""Conversation persistence.
+"""Persistence — the AIOS seam over session/message/grant storage.
 
-A small, thread-safe SQLite store for chat sessions and their messages so the
-assistant remembers context across restarts. Stdlib ``sqlite3`` only; the file
-lives under the user's data dir and never leaves the machine.
+`SessionStore` is the AIOS-owned interface (Constitution §II; matrix row #6). Its
+methods are AIOS domain concepts (sessions, messages, permission grants), not
+storage-engine idioms, so a future AIOS store can implement the same contract.
 
-The daemon is threaded, so every method serializes access through a lock and a
-single shared connection opened with ``check_same_thread=False``.
+`SqliteStore` is the default implementation and the **only** place that knows
+SQLite. Callers depend on the interface and obtain an instance from
+`open_store()`.
 """
 
 from __future__ import annotations
@@ -15,6 +16,43 @@ import sqlite3
 import threading
 import time
 import uuid
+from abc import ABC, abstractmethod
+
+DEFAULT_TITLE = "New chat"
+
+
+class SessionStore(ABC):
+    """Conversation persistence contract: sessions, messages, permission grants."""
+
+    # -- sessions ---------------------------------------------------------
+    @abstractmethod
+    def create_session(self, title: str | None = None, session_id: str | None = None) -> str: ...
+    @abstractmethod
+    def rename_session(self, session_id: str, title: str) -> None: ...
+    @abstractmethod
+    def get_session(self, session_id: str): ...
+    @abstractmethod
+    def list_sessions(self): ...
+    @abstractmethod
+    def delete_session(self, session_id: str) -> bool: ...
+
+    # -- messages ---------------------------------------------------------
+    @abstractmethod
+    def add_message(self, session_id: str, role: str, content: str) -> None: ...
+    @abstractmethod
+    def get_messages(self, session_id: str, limit: int | None = None): ...
+
+    # -- permission grants (per-session tool scopes) ----------------------
+    @abstractmethod
+    def grant_tool(self, session_id: str, tool: str) -> None: ...
+    @abstractmethod
+    def revoke_tool(self, session_id: str, tool: str) -> bool: ...
+    @abstractmethod
+    def list_grants(self, session_id: str): ...
+
+    @abstractmethod
+    def close(self) -> None: ...
+
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS sessions (
@@ -39,10 +77,14 @@ CREATE TABLE IF NOT EXISTS grants (
 );
 """
 
-DEFAULT_TITLE = "New chat"
 
+class SqliteStore(SessionStore):
+    """Thread-safe SQLite implementation of :class:`SessionStore`.
 
-class Storage:
+    The daemon is threaded, so every method serializes through a lock and a
+    single shared connection opened with ``check_same_thread=False``.
+    """
+
     def __init__(self, path: str):
         self.path = path
         self._lock = threading.Lock()
@@ -70,9 +112,7 @@ class Storage:
 
     def rename_session(self, session_id: str, title: str) -> None:
         with self._lock:
-            self._conn.execute(
-                "UPDATE sessions SET title=? WHERE id=?", (title, session_id)
-            )
+            self._conn.execute("UPDATE sessions SET title=? WHERE id=?", (title, session_id))
             self._conn.commit()
 
     def get_session(self, session_id: str):
@@ -86,10 +126,8 @@ class Storage:
             ).fetchone()[0]
         if row is None:
             return None
-        return {
-            "id": row[0], "title": row[1],
-            "created_at": row[2], "updated_at": row[3], "messages": count,
-        }
+        return {"id": row[0], "title": row[1],
+                "created_at": row[2], "updated_at": row[3], "messages": count}
 
     def list_sessions(self):
         with self._lock:
@@ -98,11 +136,8 @@ class Storage:
                 "  (SELECT COUNT(*) FROM messages m WHERE m.session_id = s.id) "
                 "FROM sessions s ORDER BY s.updated_at DESC"
             ).fetchall()
-        return [
-            {"id": r[0], "title": r[1], "created_at": r[2],
-             "updated_at": r[3], "messages": r[4]}
-            for r in rows
-        ]
+        return [{"id": r[0], "title": r[1], "created_at": r[2],
+                 "updated_at": r[3], "messages": r[4]} for r in rows]
 
     def delete_session(self, session_id: str) -> bool:
         with self._lock:
@@ -124,9 +159,7 @@ class Storage:
                 "VALUES(?, ?, ?, ?)",
                 (session_id, role, content, now),
             )
-            self._conn.execute(
-                "UPDATE sessions SET updated_at=? WHERE id=?", (now, session_id)
-            )
+            self._conn.execute("UPDATE sessions SET updated_at=? WHERE id=?", (now, session_id))
             self._conn.commit()
 
     def get_messages(self, session_id: str, limit: int | None = None):
@@ -140,7 +173,7 @@ class Storage:
             messages = messages[-limit:]
         return messages
 
-    # -- permission grants (per-session tool scopes) ----------------------
+    # -- permission grants ------------------------------------------------
     def grant_tool(self, session_id: str, tool: str) -> None:
         now = time.time()
         with self._lock:
@@ -173,3 +206,8 @@ class Storage:
     def close(self) -> None:
         with self._lock:
             self._conn.close()
+
+
+def open_store(config) -> SessionStore:
+    """Select the persistence backend. SQLite today; extended as AIOS grows."""
+    return SqliteStore(config.db_path)
