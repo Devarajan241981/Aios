@@ -36,10 +36,17 @@ def _default_trash_path() -> str:
     return os.path.join(_data_dir(), "trash")
 
 
+def _default_socket_path() -> str:
+    base = os.environ.get("XDG_RUNTIME_DIR") or _data_dir()
+    return os.path.join(base, "aiosd.sock")
+
+
 @dataclass(frozen=True)
 class Config:
     host: str = "127.0.0.1"          # loopback only — never bind public by default
     port: int = 8765
+    transport: str = "tcp"           # "tcp" (default; browser UI) | "unix"
+    socket_path: str = field(default_factory=_default_socket_path)
     backend: str = "ollama"          # "ollama" | "mock"
     model: str = "llama3.2"
     ollama_url: str = "http://127.0.0.1:11434"
@@ -78,6 +85,8 @@ class Config:
         return cls(
             host=env.get("AIOS_HOST", cls.host),
             port=int(env.get("AIOS_PORT", cls.port)),
+            transport=env.get("AIOS_TRANSPORT", cls.transport),
+            socket_path=env.get("AIOS_SOCKET_PATH") or _default_socket_path(),
             backend=env.get("AIOS_BACKEND", cls.backend),
             model=env.get("AIOS_MODEL", cls.model),
             ollama_url=env.get("AIOS_OLLAMA_URL", cls.ollama_url).rstrip("/"),

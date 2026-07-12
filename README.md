@@ -163,7 +163,9 @@ Every setting is also an environment variable (local-first defaults):
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `AIOS_HOST` | `127.0.0.1` | bind address (keep on loopback) |
-| `AIOS_PORT` | `8765` | daemon port |
+| `AIOS_PORT` | `8765` | daemon port (tcp transport) |
+| `AIOS_TRANSPORT` | `tcp` | `tcp` (browser UI) or `unix` (no TCP port; 0600 socket) |
+| `AIOS_SOCKET_PATH` | `$XDG_RUNTIME_DIR/aiosd.sock` | Unix socket path (unix transport) |
 | `AIOS_BACKEND` | `ollama` | `ollama` or `mock` |
 | `AIOS_MODEL` | `llama3.2` | model name passed to the backend |
 | `AIOS_OLLAMA_URL` | `http://127.0.0.1:11434` | Ollama endpoint |

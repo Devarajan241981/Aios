@@ -40,7 +40,7 @@ Hardware → [AKI] → Kernel(Linux) → [HAL] → System services (AIOS) → [P
 | 20 | Update system | Ship updates | `UpdateManager` seam *(to define)* | ⬜ dnf/ostree | Medium | AIOS atomic updates | 2 |
 | 21 | File manager | Browse files | app over Platform API | ⬜ none | Low | AIOS file manager | 2 |
 | 22 | Developer SDK | Third-party apps | AIOS SDK (over Platform API) | 🟡 the API exists | Medium | AIOS SDK + language bindings | 2 |
-| 23 | IPC transport | Service ↔ app | loopback HTTP today; `Transport` seam | 🟡 HTTP/loopback | Medium | AIOS IPC (message ports) | 2–3 |
+| 23 | IPC transport | Service ↔ app | **`Transport` interface** (ours) — `aiosd/transport.py` | 🟡 TCP-HTTP **+ Unix-socket-HTTP** behind it | Medium | AIOS IPC (message ports) | 2–3 |
 | 24 | **Kernel** | Hardware, processes, VM | **AKI** (ours) | ⬜ Linux (Asahi) | Extreme | AIOS capability microkernel | 3 |
 | 25 | Bootloader | Bring-up | boot protocol | ⬜ m1n1/U-Boot (open) | High | keep m1n1 / AIOS boot | 3 |
 | 26 | Filesystem | Storage on disk | VFS (via AKI) | ⬜ btrfs/ext4 | Extreme | keep btrfs *or* AIOS FS (maybe never) | 3 |

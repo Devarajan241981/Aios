@@ -44,6 +44,7 @@ from .retriever import Retriever
 from .storage import SessionStore, open_store
 from .store import VectorStore
 from .tools import Registry, ToolContext, default_registry
+from .transport import make_transport
 from .ui import index_html
 
 # Endpoints reachable without a bearer token: liveness and the static web app.
@@ -122,6 +123,9 @@ def make_handler(state: AppState):
 
         def log_message(self, *args):
             pass  # request logging is handled explicitly in dispatch
+
+        def address_string(self):
+            return "local"  # transport-neutral (no client host for AF_UNIX)
 
         # -- dispatch with logging + auth ---------------------------------
         def do_GET(self):
@@ -383,10 +387,12 @@ def build_state(config) -> AppState:
     )
 
 
-def build_server(config) -> ThreadingHTTPServer:
+def build_server(config):
+    transport = make_transport(config)   # validates transport config before opening resources
     state = build_state(config)
-    httpd = ThreadingHTTPServer((config.host, config.port), make_handler(state))
-    httpd.aios_state = state  # exposed so callers/tests can close resources
+    httpd = transport.create(make_handler(state))
+    httpd.aios_state = state          # exposed so callers/tests can close resources
+    httpd.aios_transport = transport  # how apps reach us (tcp | unix)
     return httpd
 
 
@@ -397,17 +403,21 @@ def serve(config=None):
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     httpd = build_server(config)
-    host, port = httpd.server_address
+    transport = httpd.aios_transport
     log.info(
-        "aiosd %s listening on http://%s:%s (backend=%s, model=%s, "
+        "aiosd %s listening on %s (transport=%s, backend=%s, model=%s, "
         "embeddings=%s, rag=%s, tools=%s, auth=%s)",
-        __version__, host, port, config.backend, config.model, config.embeddings,
+        __version__, transport.describe(), transport.name, config.backend,
+        config.model, config.embeddings,
         "on" if config.rag_enabled else "off",
         "on" if config.tools_enabled else "off",
         "on" if config.token else "off",
     )
-    print(f"aiosd {__version__} listening on http://{host}:{port}", flush=True)
-    print(f"  web UI:  http://{host}:{port}/", flush=True)
+    print(f"aiosd {__version__} listening on {transport.describe()}", flush=True)
+    if transport.name == "tcp":
+        print(f"  web UI:  {transport.describe()}", flush=True)
+    else:
+        print("  (unix socket; the browser web UI requires the tcp transport)", flush=True)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
