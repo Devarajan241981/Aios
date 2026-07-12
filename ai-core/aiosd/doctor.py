@@ -91,6 +91,21 @@ def evaluate(p: dict) -> list:
                 have = ", ".join(m for m in models if m) or "none"
                 add(WARN, "model", f"'{model}' not pulled — try `ollama pull {model}` (have: {have})")
 
+        # Embeddings readiness — reuses data already fetched (no extra I/O).
+        embeddings = cfg.get("embeddings")
+        if embeddings == "ollama":
+            embed_model = cfg.get("embed_model")
+            if isinstance(models, list) and models and embed_model:
+                if any(embed_model in m for m in models if m):
+                    add(OK, "embeddings", f"ollama embeddings '{embed_model}' available")
+                else:
+                    add(WARN, "embeddings",
+                        f"embedding model '{embed_model}' not pulled — try `ollama pull {embed_model}`")
+            else:
+                add(INFO, "embeddings", f"ollama embeddings ('{embed_model}') — model list unavailable")
+        elif embeddings:
+            add(OK, "embeddings", f"{embeddings} embeddings (offline, no model to pull)")
+
         docs = (health.get("index") or {}).get("documents", 0)
         add(INFO if docs else WARN, "index",
             f"{docs} documents indexed" + ("" if docs else " — add some with `aios index <path>`"))

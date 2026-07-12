@@ -11,10 +11,12 @@ def probe(**overrides):
         "reachable": True,
         "health": {
             "version": "0.3.0",
-            "backend": {"backend": "ollama", "ok": True, "models": ["llama3.2:latest"]},
+            "backend": {"backend": "ollama", "ok": True,
+                        "models": ["llama3.2:latest", "nomic-embed-text:latest"]},
             "index": {"documents": 3},
         },
         "config": {"model": "llama3.2", "backend": "ollama",
+                   "embeddings": "ollama", "embed_model": "nomic-embed-text",
                    "tools_enabled": True, "audit_enabled": True, "token_set": False},
         "config_status": 200,
         "sessions_status": 200,
@@ -54,8 +56,23 @@ class TestEvaluate(unittest.TestCase):
 
     def test_model_not_pulled_warns(self):
         p = probe()
-        p["health"]["backend"]["models"] = ["mistral:latest"]
+        p["health"]["backend"]["models"] = ["mistral:latest", "nomic-embed-text:latest"]
         self.assertEqual(by_name(evaluate(p))["model"]["status"], WARN)
+
+    def test_ollama_embeddings_available(self):
+        self.assertEqual(by_name(evaluate(probe()))["embeddings"]["status"], OK)
+
+    def test_embed_model_not_pulled_warns(self):
+        p = probe()
+        p["health"]["backend"]["models"] = ["llama3.2:latest"]  # no embed model
+        self.assertEqual(by_name(evaluate(p))["embeddings"]["status"], WARN)
+
+    def test_hashing_embeddings_ok_offline(self):
+        p = probe()
+        p["config"]["embeddings"] = "hashing"
+        c = by_name(evaluate(p))["embeddings"]
+        self.assertEqual(c["status"], OK)
+        self.assertIn("offline", c["message"])
 
     def test_empty_index_warns(self):
         p = probe()

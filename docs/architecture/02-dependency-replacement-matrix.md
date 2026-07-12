@@ -20,8 +20,8 @@ Hardware → [AKI] → Kernel(Linux) → [HAL] → System services (AIOS) → [P
 |---|-----------|---------------|-------------------------------|---------|-----------|----------------------|-------|
 | 1 | **App platform API** | The contract apps target | **`aiosd` service API** (ours) — [v1 spec](04-platform-api-v1.md) | ✅ ours, **v1 frozen** | — | `/v2` only for a breaking change | 1 |
 | 2 | **AI runtime / agent** | The core product | `Assistant`, `Agent`, `Registry` (ours) | ✅ ours | — | AIOS inference runtime | 1–2 |
-| 3 | Model inference | Don't own a trained-model runtime yet | `Backend` interface | 🟡 Ollama / llama.cpp / mock | Low | AIOS inference engine (llama.cpp as lib → own) | 2 |
-| 4 | Embeddings | Vector search | `Embedder` interface | ✅ hashing (ours) + 🟡 Ollama | Low | AIOS embedder | 1–2 |
+| 3 | Model inference | Don't own a trained-model runtime yet | **`Backend` interface** (ours) — `aiosd/backends.py`; [ADR-0009](../decisions/0009-inference-seam.md) | 🟡 Ollama / llama.cpp / mock behind it | Low | AIOS inference engine (llama.cpp as lib → own) | 2 |
+| 4 | Embeddings | Vector search | **`Embedder` interface** (ours) — `aiosd/embeddings.py`; readiness in `aios doctor` | ✅ hashing (ours) + 🟡 Ollama | Low | AIOS embedder | 1–2 |
 | 5 | Vector store | Semantic memory | `VectorStore` interface | ✅ ours (pure Python) | Trivial | AIOS ANN engine | 2 |
 | 6 | Persistence | Sessions/messages/grants | **`SessionStore` interface** (ours) — `aiosd/storage.py` | 🟡 `SqliteStore` behind it (only class that knows SQLite) | Low | AIOS store (keep SQLite unless it blocks us) | 2 |
 | 7 | Config | Settings | `Config` + `load_config` (ours) | ✅ ours (TOML/env) | — | AIOS settings service | 1–2 |
