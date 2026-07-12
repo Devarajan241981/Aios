@@ -28,8 +28,8 @@ Hardware → [AKI] → Kernel(Linux) → [HAL] → System services (AIOS) → [P
 | 8 | Tools / capabilities | Let the AI act, safely | `Tool`, capability/approval model (ours) | ✅ ours | — | AIOS capability system (kernel-aligned) | 1 |
 | 9 | Audit | Trust/observability | `AuditLog` (ours) | ✅ ours | — | AIOS audit service | 1 |
 | 10 | **Device/power facts** | Grounding | **`Platform` HAL** (ours) | 🟡 PosixPlatform | Low | AIOS-kernel Platform impl | 1/3 |
-| 11 | Scheduling (automations) | Timed prompts | `Scheduler` (ours) → systemd timers | 🟡 systemd user timers | Medium | AIOS scheduler over `aiosinit` | 2 |
-| 12 | Init / service manager | Start/supervise services | `ServiceManager` seam *(to define)* | ⬜ systemd | Medium | `aiosinit` | 2 |
+| 11 | Scheduling (automations) | Timed prompts | `Scheduler` (ours, AIOS-neutral) → `ServiceManager` | ✅ policy ours; 🟡 systemd timers behind the seam | Low | AIOS scheduler over `aiosinit` | 2 |
+| 12 | Init / service manager | Start/supervise services & jobs | **`ServiceManager` interface** (ours) — `aiosd/platform/services.py` | 🟡 `SystemdServiceManager` (the only class that knows systemd) | Medium | `aiosinit` `ServiceManager` impl | 2 |
 | 13 | Shell (CLI) | Human/automation entry | `aios` (ours) | ✅ ours (+ bash for scripts) | Low | AIOS shell | 1–2 |
 | 14 | Desktop shell (panel/overlay/launcher) | The UX identity | shell components (ours) | 🟡 swaybar/web/scripts | Low–Med | native AIOS shell | 2 |
 | 15 | Compositor / WM | Draw & manage windows | `Compositor` seam + AIOS shell protocol | ⬜ Sway (wlroots) | High | AIOS compositor (wlroots-as-lib → own) | 2–3 |

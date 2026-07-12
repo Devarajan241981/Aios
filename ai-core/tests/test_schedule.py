@@ -2,39 +2,28 @@ import os
 import tempfile
 import unittest
 
-from aiosd.schedule import (
-    Scheduler,
-    ScheduleError,
-    service_unit,
-    timer_unit,
-    to_oncalendar,
-    wrapper_script,
-)
+from aiosd.platform.services import NullServiceManager
+from aiosd.schedule import Scheduler, ScheduleError, wrapper_script
 
 
-class TestOnCalendar(unittest.TestCase):
-    def test_shortcuts(self):
-        self.assertEqual(to_oncalendar("hourly"), "hourly")
-        self.assertEqual(to_oncalendar("Daily"), "daily")
+class StubServiceManager(NullServiceManager):
+    """Records scheduling calls so we can test the Scheduler policy in isolation."""
 
-    def test_daily_time(self):
-        self.assertEqual(to_oncalendar("daily 08:00"), "*-*-* 08:00:00")
+    def __init__(self):
+        self.scheduled = []
+        self.unscheduled = []
 
-    def test_bare_time(self):
-        self.assertEqual(to_oncalendar("7:5"), "*-*-* 07:05:00")
+    def schedule(self, job):
+        self.scheduled.append(job)
+        return {"calendar": f"CAL({job.when})", "backend": "stub", "enabled": True}
 
-    def test_weekday_time(self):
-        self.assertEqual(to_oncalendar("mon 09:30"), "Mon *-*-* 09:30:00")
-
-    def test_passthrough(self):
-        self.assertEqual(to_oncalendar("*-*-* 12:00:00"), "*-*-* 12:00:00")
+    def unschedule(self, name):
+        self.unscheduled.append(name)
+        return True
 
 
-class TestUnitGenerators(unittest.TestCase):
-    def test_units_and_wrapper(self):
-        self.assertIn("OnCalendar=daily", timer_unit("x", "daily"))
-        self.assertIn("WantedBy=timers.target", timer_unit("x", "daily"))
-        self.assertIn("ExecStart=/w.sh", service_unit("x", "/w.sh"))
+class TestWrapper(unittest.TestCase):
+    def test_wrapper_runs_plain_ask(self):
         w = wrapper_script("/usr/bin/aios", "hello 'world'", "/tmp/x.log")
         self.assertIn("aios", w)
         self.assertIn("ask", w)
@@ -44,21 +33,22 @@ class TestUnitGenerators(unittest.TestCase):
 class TestScheduler(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        self.sched = Scheduler(
-            unit_dir=os.path.join(self.tmp.name, "units"),
-            data_dir=os.path.join(self.tmp.name, "data"),
-            aios_bin="/usr/bin/aios",
-            run_systemctl=False,  # don't touch the real systemd
-        )
+        self.svc = StubServiceManager()
+        self.sched = Scheduler(self.svc, data_dir=self.tmp.name, aios_bin="/usr/bin/aios")
 
     def tearDown(self):
         self.tmp.cleanup()
 
-    def test_add_creates_files_and_index(self):
+    def test_add_delegates_and_writes_policy_artifacts(self):
         rec = self.sched.add("digest", "daily 08:00", "summarize my unread email")
-        self.assertEqual(rec["oncalendar"], "*-*-* 08:00:00")
-        self.assertTrue(os.path.exists(os.path.join(self.sched.unit_dir, "aios-digest.timer")))
-        self.assertTrue(os.path.exists(os.path.join(self.sched.unit_dir, "aios-digest.service")))
+        # delegated OS registration to the seam
+        self.assertEqual(len(self.svc.scheduled), 1)
+        self.assertEqual(self.svc.scheduled[0].name, "digest")
+        self.assertEqual(self.svc.scheduled[0].command,
+                         os.path.join(self.sched.auto_dir, "digest.sh"))
+        # calendar comes back from the manager, not decided by the Scheduler
+        self.assertEqual(rec["calendar"], "CAL(daily 08:00)")
+        # AIOS-owned artifacts: wrapper + index
         self.assertTrue(os.path.exists(os.path.join(self.sched.auto_dir, "digest.sh")))
         self.assertEqual([r["name"] for r in self.sched.list()], ["digest"])
 
@@ -66,11 +56,12 @@ class TestScheduler(unittest.TestCase):
         with self.assertRaises(ScheduleError):
             self.sched.add("bad name!", "hourly", "hi")
 
-    def test_remove(self):
+    def test_remove_delegates_and_cleans_up(self):
         self.sched.add("t", "hourly", "tick")
         self.assertTrue(self.sched.remove("t"))
+        self.assertEqual(self.svc.unscheduled, ["t"])
         self.assertEqual(self.sched.list(), [])
-        self.assertFalse(os.path.exists(os.path.join(self.sched.unit_dir, "aios-t.timer")))
+        self.assertFalse(os.path.exists(os.path.join(self.sched.auto_dir, "t.sh")))
         self.assertFalse(self.sched.remove("t"))  # already gone
 
 

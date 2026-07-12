@@ -386,10 +386,12 @@ def _load_scheduler():
     if os.path.isdir(core) and core not in sys.path:
         sys.path.insert(0, core)
     from aiosd.schedule import Scheduler  # noqa: E402
+    from aiosd.platform.services import current_service_manager  # noqa: E402
     cfg_base = os.environ.get("XDG_CONFIG_HOME") or os.path.join(os.path.expanduser("~"), ".config")
     data_base = os.environ.get("XDG_DATA_HOME") or os.path.join(os.path.expanduser("~"), ".local", "share")
+    svc = current_service_manager(unit_dir=os.path.join(cfg_base, "systemd", "user"))
     return Scheduler(
-        unit_dir=os.path.join(cfg_base, "systemd", "user"),
+        service_manager=svc,
         data_dir=os.path.join(data_base, "aios"),
         aios_bin=os.path.realpath(__file__),
     )
@@ -403,17 +405,17 @@ def cmd_schedule_add(args) -> int:
     except ScheduleError as exc:
         print(exc, file=sys.stderr)
         return 2
-    print(f"scheduled '{rec['name']}' — OnCalendar={rec['oncalendar']}")
+    print(f"scheduled '{rec['name']}' — {rec['calendar']}  (backend: {rec['backend']})")
     print(f"  runs: aios ask \"{rec['prompt']}\"")
     print(f"  log:  {rec['log']}")
-    if not sched.run_systemctl:
-        print("  (systemd not found — units written; enable them on a Linux system)")
+    if not sched.available:
+        print("  (no systemd here — units written; enable them on a Linux system)")
     return 0
 
 
 def cmd_schedule_list(_args) -> int:
     for rec in _load_scheduler().list():
-        print(f"{rec['name']:<16} {rec['oncalendar']:<22} {rec['prompt']}")
+        print(f"{rec['name']:<16} {rec['calendar']:<22} {rec['prompt']}")
     return 0
 
 
