@@ -21,7 +21,8 @@ no kernel work, no cloud. The rest is on the [roadmap](ROADMAP.md).
 | --- | --- |
 | `aiosd` — local assistant daemon (HTTP, loopback) | ✅ working, tested |
 | **Web UI** — self-contained chat app served by the daemon | ✅ working, tested |
-| `aios` — CLI (`ask`/`chat`/`overlay`/`status`/`index`/`search`/`sessions`/`history`/`tools`) | ✅ working |
+| `aios` — CLI (`ask`/`chat`/`overlay`/`index`/`search`/`sessions`/`tools`/`audit`/`config`/`doctor`/…) | ✅ working |
+| **`aios doctor`** — one-command setup diagnostics | ✅ working, tested |
 | **Global-hotkey overlay** (`Super+Space`) — assistant over any app (Sway) | ✅ working, tested |
 | **Native panel** (swaybar): backend health, index size, battery, clock, AIOS button | ✅ working, tested |
 | Streaming replies (token-by-token, SSE) — daemon + live CLI | ✅ working, tested |
@@ -90,6 +91,12 @@ the daemon halts and shows you the exact effect — a **colored unified diff** w
 you approve, verified by a content hash, so you never run something different
 from what you saw. `run_command` is additionally restricted to an allowlist
 (`AIOS_ALLOWED_COMMANDS`). Full model: [docs/decisions/0002-tools-safety.md](docs/decisions/0002-tools-safety.md).
+
+Not sure what's set up? Diagnose everything in one command:
+
+```bash
+./bin/aios doctor   # checks daemon, backend, model, index, tools, PATH, Ollama…
+```
 
 Run the tests (fully offline, no Ollama required):
 

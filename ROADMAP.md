@@ -24,6 +24,8 @@ The differentiator, buildable now with zero OS work.
 - [x] Packaging: `pyproject.toml` + `aiosd` console entry point
 - [x] Config file (`~/.config/aios/config.toml`, TOML) with defaults<file<env
       precedence, an `aios config` command, and a `/config` endpoint
+- [x] `aios doctor` — one-command setup diagnostics (daemon, backend, model,
+      index, storage, tools, audit, PATH, Ollama)
 
 **Exit criteria:** you use `aios` daily on your Mac for real questions.
 

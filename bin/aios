@@ -380,6 +380,20 @@ def cmd_config(_args) -> int:
     return 0
 
 
+def cmd_doctor(_args) -> int:
+    # The diagnostic logic lives in the aiosd package next to this script.
+    here = os.path.dirname(os.path.realpath(__file__))
+    core = os.path.join(os.path.dirname(here), "ai-core")
+    if os.path.isdir(core) and core not in sys.path:
+        sys.path.insert(0, core)
+    try:
+        from aiosd import doctor
+    except Exception as exc:
+        print(f"doctor unavailable (cannot import aiosd): {exc}", file=sys.stderr)
+        return 1
+    return doctor.run(base_url(), dict(os.environ), sys.stdout)
+
+
 def cmd_audit(args) -> int:
     import datetime
     code, body = request("GET", f"/v1/audit?n={args.n}", timeout=8)
@@ -439,6 +453,7 @@ def main(argv=None) -> int:
     sub.add_parser("sessions", help="list saved chat sessions").set_defaults(func=cmd_sessions)
     sub.add_parser("tools", help="list available tools").set_defaults(func=cmd_tools)
     sub.add_parser("config", help="show config file + effective settings").set_defaults(func=cmd_config)
+    sub.add_parser("doctor", help="diagnose the AIOS setup").set_defaults(func=cmd_doctor)
 
     audit = sub.add_parser("audit", help="show recent tool activity")
     audit.add_argument("-n", type=int, default=50, help="number of events (default 50)")
