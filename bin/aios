@@ -425,6 +425,47 @@ def cmd_schedule_remove(args) -> int:
     return 0 if ok else 1
 
 
+def cmd_update(args) -> int:
+    here = os.path.dirname(os.path.realpath(__file__))
+    core = os.path.join(os.path.dirname(here), "ai-core")
+    if os.path.isdir(core) and core not in sys.path:
+        sys.path.insert(0, core)
+    try:
+        from aiosd.update import make_update_manager
+    except Exception as exc:
+        print(f"update unavailable: {exc}", file=sys.stderr)
+        return 1
+    mgr = make_update_manager(branch=args.branch)
+
+    if args.apply:
+        res = mgr.apply()
+        if not res.get("ok"):
+            print(res.get("error", "update failed"), file=sys.stderr)
+            return 1
+        if res.get("applied"):
+            print(f"updated {res['from']} → {res['to']}")
+            print("restart the daemon to apply:  systemctl --user restart aiosd  (or restart `make run`)")
+            request("POST", "/v1/notifications",
+                    {"title": "AIOS updated", "level": "success", "source": "update",
+                     "body": f"{res['from']} → {res['to']} — restart to apply"}, timeout=5)
+        else:
+            print(res.get("message", "already up to date"))
+        return 0
+
+    st = mgr.status()
+    if not st.get("ok"):
+        print(st.get("error", "error"), file=sys.stderr)
+        return 1
+    print(f"AIOS {st['version']}  ({st['branch']} @ {st['current']})")
+    if st["update_available"]:
+        print(f"update available: {st['behind']} commit(s) behind ({st['latest']}) — apply with `aios update --apply`")
+    else:
+        print("up to date")
+    if not st["clean"]:
+        print("note: working tree has uncommitted changes (blocks --apply)")
+    return 0
+
+
 def cmd_doctor(_args) -> int:
     # The diagnostic logic lives in the aiosd package next to this script.
     here = os.path.dirname(os.path.realpath(__file__))
@@ -556,6 +597,11 @@ def main(argv=None) -> int:
     sub.add_parser("tools", help="list available tools").set_defaults(func=cmd_tools)
     sub.add_parser("config", help="show config file + effective settings").set_defaults(func=cmd_config)
     sub.add_parser("doctor", help="diagnose the AIOS setup").set_defaults(func=cmd_doctor)
+
+    update = sub.add_parser("update", help="check for / apply AIOS updates")
+    update.add_argument("--apply", action="store_true", help="fast-forward to the latest")
+    update.add_argument("--branch", default="main", help="branch to track (default main)")
+    update.set_defaults(func=cmd_update)
 
     schedule = sub.add_parser("schedule", help="scheduled automations (systemd timers)")
     ssub = schedule.add_subparsers(dest="subcmd", required=True)

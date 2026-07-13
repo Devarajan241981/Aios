@@ -116,6 +116,14 @@ Not sure what's set up? Diagnose everything in one command:
 ./bin/aios doctor   # checks daemon, backend, model, index, tools, PATH, Ollama…
 ```
 
+Update AIOS (safe: read-only check by default; `--apply` refuses a dirty tree and
+only fast-forwards):
+
+```bash
+./bin/aios update            # is there a newer version?
+./bin/aios update --apply    # fast-forward to it, then restart the daemon
+```
+
 Schedule a prompt to run on a timer (systemd user timers; runs plain `aios ask`
 so a schedule can never mutate anything unattended):
 

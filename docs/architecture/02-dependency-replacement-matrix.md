@@ -37,7 +37,7 @@ Hardware → [AKI] → Kernel(Linux) → [HAL] → System services (AIOS) → [P
 | 17 | UI toolkit | Build interfaces | AIOS UI / SDK | 🟡 web (HTML/CSS, ours) | Medium | AIOS UI toolkit | 2 |
 | 18 | Notification center | System messaging | **`NotificationCenter` + `NotificationChannel`** (ours) — `aiosd/notifications.py`; [ADR-0010](../decisions/0010-notification-center.md) | ✅ AIOS service; 🟡 `DesktopChannel` (notify-send) behind the channel seam | Low | AIOS notification daemon | 2 |
 | 19 | Package manager | Install software | `PackageManager` seam *(to define)* | ⬜ Flatpak/dnf | High | AIOS packages | 2 |
-| 20 | Update system | Ship updates | `UpdateManager` seam *(to define)* | ⬜ dnf/ostree | Medium | AIOS atomic updates | 2 |
+| 20 | Update system | Ship updates | **`UpdateManager` interface** (ours) — `aiosd/update.py`; [ADR-0011](../decisions/0011-update-manager-seam.md) | 🟡 `GitUpdateManager` (git checkout — current stage) | Medium | AIOS atomic/image updates (ostree-style) | 2 |
 | 21 | File manager | Browse files | app over Platform API | ⬜ none | Low | AIOS file manager | 2 |
 | 22 | Developer SDK | Third-party apps | AIOS SDK (over Platform API) | 🟡 the API exists | Medium | AIOS SDK + language bindings | 2 |
 | 23 | IPC transport | Service ↔ app | **`Transport` interface** (ours) — `aiosd/transport.py` | 🟡 TCP-HTTP **+ Unix-socket-HTTP** behind it | Medium | AIOS IPC (message ports) | 2–3 |
