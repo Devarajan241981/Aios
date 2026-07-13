@@ -50,6 +50,7 @@ no kernel work, no cloud. The rest is on the [roadmap](ROADMAP.md).
 | **Mutating tools** (`write_file`, `run_command`, `move_file`, `delete_file`→trash) with preview-before-run | ✅ working, tested |
 | **Hardening**: bearer-token auth, structured logging, body limits, `/version` | ✅ working, tested |
 | **Audit log** — every tool run + approval recorded (JSONL), `aios audit` | ✅ working, tested |
+| **Notifications** — center + desktop channel; web-UI bell; `aios notify` | ✅ working, tested |
 | Wayland desktop shell on Asahi | ⏳ planned (Phase 3) |
 
 ## Quick start (2 minutes)
@@ -186,6 +187,8 @@ Every setting is also an environment variable (local-first defaults):
 | `AIOS_AUDIT` | `on` | record tool activity to an audit log |
 | `AIOS_AUDIT_PATH` | `~/.local/share/aios/audit.log` | audit log location |
 | `AIOS_TRASH_PATH` | `~/.local/share/aios/trash` | where `delete_file` moves files |
+| `AIOS_NOTIFY_DESKTOP` | `on` | deliver notifications via desktop `notify-send` |
+| `AIOS_NOTIFICATIONS_PATH` | `~/.local/share/aios/notifications.json` | notification store |
 | `AIOS_ACCENT` | *(theme default)* | default web-UI accent color (CSS color) |
 
 ## Repository layout

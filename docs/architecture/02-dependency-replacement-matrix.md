@@ -35,7 +35,7 @@ Hardware → [AKI] → Kernel(Linux) → [HAL] → System services (AIOS) → [P
 | 15 | Compositor / WM | Draw & manage windows | `Compositor` seam + AIOS shell protocol | ⬜ Sway (wlroots) | High | AIOS compositor (wlroots-as-lib → own) | 2–3 |
 | 16 | Session / login | Start a user session | `SessionManager` seam *(to define)* | ⬜ greetd/DM + `aios-session` | Medium | AIOS greeter | 2 |
 | 17 | UI toolkit | Build interfaces | AIOS UI / SDK | 🟡 web (HTML/CSS, ours) | Medium | AIOS UI toolkit | 2 |
-| 18 | Notification center | System messaging | `Notifications` seam *(to define)* | ⬜ none/libnotify | Low | AIOS notification service | 2 |
+| 18 | Notification center | System messaging | **`NotificationCenter` + `NotificationChannel`** (ours) — `aiosd/notifications.py`; [ADR-0010](../decisions/0010-notification-center.md) | ✅ AIOS service; 🟡 `DesktopChannel` (notify-send) behind the channel seam | Low | AIOS notification daemon | 2 |
 | 19 | Package manager | Install software | `PackageManager` seam *(to define)* | ⬜ Flatpak/dnf | High | AIOS packages | 2 |
 | 20 | Update system | Ship updates | `UpdateManager` seam *(to define)* | ⬜ dnf/ostree | Medium | AIOS atomic updates | 2 |
 | 21 | File manager | Browse files | app over Platform API | ⬜ none | Low | AIOS file manager | 2 |

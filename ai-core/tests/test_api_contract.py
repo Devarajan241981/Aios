@@ -137,6 +137,12 @@ class TestContract(unittest.TestCase):
         self.assertEqual(code, 200)
         self.assertIsInstance(b["events"], list)
 
+    def test_notifications_shape(self):
+        code, b = self.c.call("GET", "/v1/notifications")
+        self.assertEqual(code, 200)
+        self.assertIsInstance(b["notifications"], list)
+        self.assertIn("unread", b)
+
 
 class TestContractAuth(unittest.TestCase):
     @classmethod

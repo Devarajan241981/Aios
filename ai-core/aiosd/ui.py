@@ -64,8 +64,20 @@ INDEX_HTML = r"""<!doctype html>
   .accent-dots{display:flex;gap:6px}
   .dot{width:14px;height:14px;border-radius:50%;cursor:pointer;border:2px solid transparent}
   .dot.sel{border-color:var(--text)}
-  #themebtn{background:transparent;border:1px solid var(--border);border-radius:8px;
+  #themebtn,#bell{background:transparent;border:1px solid var(--border);border-radius:8px;
             color:var(--text);cursor:pointer;padding:2px 9px;font-size:15px;line-height:1.4}
+  #bell{position:relative}
+  #nbadge{position:absolute;top:-7px;right:-7px;background:#e11d73;color:#fff;border-radius:9px;
+          font-size:10px;line-height:1.6;padding:0 5px;display:none}
+  #npanel{position:fixed;top:50px;right:16px;width:320px;max-height:64vh;overflow-y:auto;
+          background:var(--panel);border:1px solid var(--border);border-radius:12px;
+          box-shadow:0 10px 30px rgba(0,0,0,.25);display:none;z-index:20}
+  #npanel .nhead{display:flex;justify-content:space-between;align-items:center;
+                 padding:9px 12px;border-bottom:1px solid var(--border)}
+  #npanel .nitem{padding:9px 12px;border-bottom:1px solid var(--border);font-size:13px}
+  #npanel .nitem.unread{background:var(--user)}
+  #npanel .nitem .nlvl{font-size:11px;color:var(--muted)}
+  #npanel .nempty{padding:18px;color:var(--muted);text-align:center}
   .toolgle{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer}
   .thread{flex:1;overflow-y:auto;padding:22px 18px;min-height:0}
   .wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
@@ -112,10 +124,12 @@ INDEX_HTML = r"""<!doctype html>
     <div class="status" id="status">connecting…</div>
     <div class="controls">
       <span class="accent-dots" id="dots"></span>
+      <button id="bell" title="Notifications">🔔<span id="nbadge">0</span></button>
       <button id="themebtn" title="Theme: system / light / dark">◐</button>
       <label class="toolgle"><input type="checkbox" id="tools"> tools</label>
     </div>
   </div>
+  <div id="npanel"></div>
   <div class="thread" id="thread">
     <div class="wrap" id="wrap">
       <div class="empty" id="empty">
@@ -272,6 +286,32 @@ function renderApproval(text, pending, approved){
   card.querySelector('.ghost').onclick=()=>{ card.remove(); bubble('assistant','Declined — nothing was changed.'); };
 }
 
+// --- notifications ---
+let notifItems=[];
+async function refreshNotifications(){
+  try{
+    const {body}=await api('GET','/v1/notifications?n=20');
+    notifItems=body.notifications||[];
+    const badge=$('#nbadge'); const u=body.unread||0;
+    badge.textContent=u; badge.style.display=u?'inline-block':'none';
+  }catch(e){}
+}
+function renderNotifPanel(){
+  let html='<div class="nhead"><b>Notifications</b><button class="btn ghost" id="nread">Mark all read</button></div>';
+  if(!notifItems.length) html+='<div class="nempty">Nothing yet</div>';
+  else notifItems.forEach(n=>{
+    html+='<div class="nitem'+(n.read?'':' unread')+'"><div class="nlvl">'+escapeHtml(n.level)+'</div><b>'+
+      escapeHtml(n.title)+'</b>'+(n.body?'<div>'+escapeHtml(n.body)+'</div>':'')+'</div>';
+  });
+  $('#npanel').innerHTML=html;
+  const rb=$('#nread'); if(rb) rb.onclick=async()=>{ await api('POST','/v1/notifications/read',{}); await refreshNotifications(); renderNotifPanel(); };
+}
+function toggleNotifPanel(){
+  const p=$('#npanel');
+  if(p.style.display==='block'){ p.style.display='none'; return; }
+  renderNotifPanel(); p.style.display='block';
+}
+
 // --- theme + accent (persisted in localStorage) ---
 const THEMES=['system','light','dark'];
 const THEME_ICON={system:'◐', light:'☀', dark:'☾'};
@@ -305,9 +345,11 @@ const input=$('#input');
 input.addEventListener('input',()=>{ input.style.height='auto'; input.style.height=Math.min(input.scrollHeight,160)+'px'; });
 input.addEventListener('keydown',e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
 $('#themebtn').addEventListener('click', cycleTheme);
+$('#bell').addEventListener('click', toggleNotifPanel);
 
-applyTheme(); applyAccent();
-loadStatus(); loadSessions(); setInterval(loadStatus, 15000);
+applyTheme(); applyAccent(); refreshNotifications();
+loadStatus(); loadSessions();
+setInterval(()=>{ loadStatus(); refreshNotifications(); }, 15000);
 </script>
 </body>
 </html>

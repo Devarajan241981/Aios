@@ -41,6 +41,10 @@ def _default_socket_path() -> str:
     return os.path.join(base, "aiosd.sock")
 
 
+def _default_notifications_path() -> str:
+    return os.path.join(_data_dir(), "notifications.json")
+
+
 @dataclass(frozen=True)
 class Config:
     host: str = "127.0.0.1"          # loopback only — never bind public by default
@@ -72,6 +76,8 @@ class Config:
     audit_enabled: bool = True
     audit_path: str = field(default_factory=_default_audit_path)
     trash_path: str = field(default_factory=_default_trash_path)
+    notifications_path: str = field(default_factory=_default_notifications_path)
+    notifications_desktop: bool = True
 
     @classmethod
     def from_env(cls, env: dict | None = None) -> "Config":
@@ -108,6 +114,8 @@ class Config:
             audit_enabled=_truthy(env.get("AIOS_AUDIT", "on")),
             audit_path=env.get("AIOS_AUDIT_PATH") or _default_audit_path(),
             trash_path=env.get("AIOS_TRASH_PATH") or _default_trash_path(),
+            notifications_path=env.get("AIOS_NOTIFICATIONS_PATH") or _default_notifications_path(),
+            notifications_desktop=_truthy(env.get("AIOS_NOTIFY_DESKTOP", "on")),
         )
 
     def redacted_dict(self) -> dict:

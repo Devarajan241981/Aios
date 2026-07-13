@@ -475,6 +475,50 @@ def cmd_grant(args) -> int:
     return 0
 
 
+def cmd_notify(args) -> int:
+    title = " ".join(args.title).strip()
+    if not title:
+        print("a title is required", file=sys.stderr)
+        return 2
+    payload = {"title": title, "body": args.body or "", "level": args.level, "source": "cli"}
+    code, body = request("POST", "/v1/notifications", payload, timeout=8)
+    if code is None or code >= 400:
+        print(body.get("error", "error"), file=sys.stderr)
+        return 1
+    print(f"notified: {body['title']}  [{body['level']}]")
+    return 0
+
+
+def cmd_notifications(args) -> int:
+    import datetime
+    if args.clear:
+        code, body = request("DELETE", "/v1/notifications", timeout=8)
+        print(f"cleared {body.get('cleared', 0)} notification(s)" if code == 200 else "error")
+        return 0 if code == 200 else 1
+    if args.read:
+        code, body = request("POST", "/v1/notifications/read", {}, timeout=8)
+        print(f"marked {body.get('read_all', 0)} as read" if code == 200 else "error")
+        return 0 if code == 200 else 1
+    path = f"/v1/notifications?n={args.n}" + ("&unread=1" if args.unread else "")
+    code, body = request("GET", path, timeout=8)
+    if code is None or code >= 400:
+        print(body.get("error", "error"), file=sys.stderr)
+        return 1
+    items = body["notifications"]
+    if not items:
+        print("no notifications")
+        return 0
+    for n in items:
+        when = datetime.datetime.fromtimestamp(n.get("ts", 0)).strftime("%m-%d %H:%M")
+        mark = " " if n.get("read") else "•"
+        line = f"{mark} {when}  [{n['level']}] {n['title']}"
+        if n.get("body"):
+            line += f" — {n['body']}"
+        print(line)
+    print(f"\n{body['unread']} unread", file=sys.stderr)
+    return 0
+
+
 def cmd_tools(_args) -> int:
     code, body = request("GET", "/v1/tools", timeout=8)
     if code is None or code >= 400:
@@ -528,6 +572,20 @@ def main(argv=None) -> int:
     audit = sub.add_parser("audit", help="show recent tool activity")
     audit.add_argument("-n", type=int, default=50, help="number of events (default 50)")
     audit.set_defaults(func=cmd_audit)
+
+    notify = sub.add_parser("notify", help="send a notification")
+    notify.add_argument("title", nargs="+", help="notification title")
+    notify.add_argument("--body", help="notification body")
+    notify.add_argument("--level", default="info",
+                        choices=["info", "success", "warning", "error"])
+    notify.set_defaults(func=cmd_notify)
+
+    notifs = sub.add_parser("notifications", help="list notifications")
+    notifs.add_argument("-n", type=int, default=50, help="number to show")
+    notifs.add_argument("--unread", action="store_true", help="only unread")
+    notifs.add_argument("--read", action="store_true", help="mark all read")
+    notifs.add_argument("--clear", action="store_true", help="delete all")
+    notifs.set_defaults(func=cmd_notifications)
 
     history = sub.add_parser("history", help="print a session's transcript")
     history.add_argument("session", help="session id")

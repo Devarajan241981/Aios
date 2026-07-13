@@ -28,7 +28,8 @@ Decision records: [0003](../decisions/0003-layered-architecture-and-hal.md)
 (SessionStore seam), [0007](../decisions/0007-freeze-platform-api-v1.md)
 (freeze Platform API v1), [0008](../decisions/0008-transport-seam.md)
 (Transport seam), [0009](../decisions/0009-inference-seam.md)
-(inference seam). Earlier:
+(inference seam), [0010](../decisions/0010-notification-center.md)
+(notification center). Earlier:
 [0001](../decisions/0001-scope-and-strategy.md),
 [0002](../decisions/0002-tools-safety.md).
 

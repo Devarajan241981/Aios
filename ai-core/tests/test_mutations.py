@@ -195,6 +195,14 @@ class TestAgentApproval(unittest.TestCase):
         self.assertEqual(result["status"], "complete")
         self.assertTrue(os.path.exists(self.target))
 
+    def test_notifier_called_on_mutation(self):
+        calls = []
+        agent = Agent(self.backend, default_registry(), self.ctx, self.cfg,
+                      notifier=lambda *a: calls.append(a))
+        agent.run([{"role": "user", "content": "write it"}], approve_all=True)
+        self.assertTrue(calls)
+        self.assertIn("write_file", calls[0][0])  # title mentions the tool
+
     def test_granted_tool_auto_approves(self):
         result = self.agent.run([{"role": "user", "content": "write it"}],
                                 granted_tools={"write_file"})
@@ -217,7 +225,9 @@ class TestApprovalOverHTTP(unittest.TestCase):
         cfg = Config.from_env({"AIOS_BACKEND": "mock", "AIOS_PORT": "0",
                                "AIOS_DB_PATH": ":memory:",
                                "AIOS_ALLOWED_ROOTS": cls.tmp.name,
-                               "AIOS_AUDIT_PATH": cls.audit_path})
+                               "AIOS_AUDIT_PATH": cls.audit_path,
+                               "AIOS_NOTIFY_DESKTOP": "off",
+                               "AIOS_NOTIFICATIONS_PATH": os.path.join(cls.tmp.name, "n.json")})
         cls.httpd = build_server(cfg)
         # inject a backend that will request a write_file tool call
         cls.httpd.aios_state.agent.backend = StatelessWriteBackend(cls.target, "hello http")

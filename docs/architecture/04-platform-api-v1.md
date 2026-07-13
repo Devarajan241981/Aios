@@ -116,6 +116,15 @@ then `data: [DONE]`. Mid-stream failures arrive as `data: {"error":"…"}`.
 ### `GET /v1/audit?n=<N>`
 `{ "events": [ { "ts", "event": "tool"|"pending"|"grant"|"revoke", "tool", … }, … ] }`
 
+### Notifications
+- `GET /v1/notifications?unread=<0|1>&n=<N>` →
+  `{ "notifications": [ { "id", "title", "body", "level", "source", "ts", "read" }, … ], "unread": N }`
+- `POST /v1/notifications` `{ "title", "body"?, "level"?, "source"? }` → `201` the created notification
+- `POST /v1/notifications/read` `{ "id"? }` → `{ "read": bool }` (one) or `{ "read_all": N }` (all)
+- `DELETE /v1/notifications` → `{ "cleared": N }`
+
+*(Added additively in v1 — no existing field changed.)*
+
 ## Design notes
 
 - **This surface is transport-shaped as HTTP today** but the *contract* is the

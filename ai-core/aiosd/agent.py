@@ -32,13 +32,16 @@ class Agent:
     runs exactly what they previewed.
     """
 
-    def __init__(self, backend, registry, ctx, config, max_steps: int = 5, audit=None):
+    def __init__(self, backend, registry, ctx, config, max_steps: int = 5,
+                 audit=None, notifier=None):
         self.backend = backend
         self.registry = registry
         self.ctx = ctx
         self.config = config
         self.max_steps = max_steps
         self.audit = audit
+        # notifier(title, body, level, source) — called when a mutating tool runs
+        self.notifier = notifier
 
     def _record(self, event):
         if self.audit is not None:
@@ -103,6 +106,14 @@ class Agent:
                               "approved": approve, "ok": result.get("ok"),
                               "error": result.get("error"),
                               "args": summarize_args(args)})
+                # awareness signal: AIOS performed a mutating action
+                if (self.notifier is not None and tool is not None
+                        and not tool.safe and result.get("ok")):
+                    try:
+                        self.notifier(f"AIOS ran {name}",
+                                      json.dumps(summarize_args(args)), "info", "agent")
+                    except Exception:
+                        pass
                 conversation.append({
                     "role": "tool",
                     "tool_call_id": call.get("id") or name,

@@ -40,6 +40,7 @@ from .backends import Backend, BackendError, make_backend
 from .config import Config, load_config
 from .embeddings import Embedder, EmbeddingError, make_embedder
 from .indexer import index_paths
+from .notifications import DesktopChannel, NotificationCenter
 from .retriever import Retriever
 from .storage import SessionStore, open_store
 from .store import VectorStore
@@ -65,6 +66,7 @@ class AppState:
     registry: Registry
     agent: Agent
     audit: AuditLog
+    notifications: NotificationCenter
     lock: threading.Lock
 
 
@@ -185,6 +187,14 @@ def make_handler(state: AppState):
                 q = parse_qs(urlparse(self.path).query)
                 n = int(q.get("n", ["50"])[0])
                 self._json(200, {"events": state.audit.tail(n)})
+            elif self.path.split("?")[0] == "/v1/notifications":
+                q = parse_qs(urlparse(self.path).query)
+                unread = q.get("unread", ["0"])[0] in ("1", "true", "yes")
+                n = int(q.get("n", ["50"])[0])
+                self._json(200, {
+                    "notifications": state.notifications.list(unread_only=unread, limit=n),
+                    "unread": state.notifications.unread_count(),
+                })
             elif self.path == "/v1/sessions":
                 self._json(200, {"sessions": state.storage.list_sessions()})
             elif self.path.startswith("/v1/sessions/"):
@@ -215,11 +225,27 @@ def make_handler(state: AppState):
                 self._json(201, state.storage.get_session(sid))
             elif self.path.startswith("/v1/sessions/") and self.path.endswith("/grants"):
                 self._handle_grants(self.path[len("/v1/sessions/"):-len("/grants")], data)
+            elif self.path == "/v1/notifications":
+                title = (data.get("title") or "").strip()
+                if not title:
+                    self._json(400, {"error": "missing 'title'"})
+                    return
+                self._json(201, state.notifications.notify(
+                    title, data.get("body", ""), data.get("level", "info"),
+                    data.get("source", "app")))
+            elif self.path == "/v1/notifications/read":
+                nid = data.get("id")
+                if nid:
+                    self._json(200, {"read": state.notifications.mark_read(nid)})
+                else:
+                    self._json(200, {"read_all": state.notifications.mark_all_read()})
             else:
                 self._json(404, {"error": "not found"})
 
         def _route_delete(self):
-            if self.path.startswith("/v1/sessions/"):
+            if self.path == "/v1/notifications":
+                self._json(200, {"cleared": state.notifications.clear()})
+            elif self.path.startswith("/v1/sessions/"):
                 sid = self.path[len("/v1/sessions/"):]
                 self._json(200, {"deleted": state.storage.delete_session(sid)})
             else:
@@ -377,13 +403,16 @@ def build_state(config) -> AppState:
     registry = default_registry()
     tool_ctx = ToolContext(config=config, retriever=retriever)
     audit = AuditLog(config.audit_path, config.audit_enabled)
-    agent = Agent(backend, registry, tool_ctx, config, audit=audit)
+    channels = [DesktopChannel()] if config.notifications_desktop else []
+    notifications = NotificationCenter(config.notifications_path, channels=channels)
+    agent = Agent(backend, registry, tool_ctx, config, audit=audit,
+                  notifier=notifications.notify)
 
     return AppState(
         config=config, backend=backend, embedder=embedder,
         vector_store=vector_store, retriever=retriever, assistant=assistant,
         storage=storage, registry=registry, agent=agent, audit=audit,
-        lock=threading.Lock(),
+        notifications=notifications, lock=threading.Lock(),
     )
 
 
