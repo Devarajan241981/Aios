@@ -9,8 +9,10 @@ from aiosd.server import build_server
 
 
 def _serve(env):
+    # audit/notify off + memory DB so tests never touch the real data dir
     cfg = Config.from_env({**{"AIOS_BACKEND": "mock", "AIOS_PORT": "0",
-                              "AIOS_DB_PATH": ":memory:"}, **env})
+                              "AIOS_DB_PATH": ":memory:", "AIOS_AUDIT": "off",
+                              "AIOS_NOTIFY_DESKTOP": "off"}, **env})
     httpd = build_server(cfg)
     port = httpd.server_address[1]
     thread = threading.Thread(target=httpd.serve_forever, daemon=True)

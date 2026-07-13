@@ -46,6 +46,11 @@ class TestSDK(unittest.TestCase):
         self.assertEqual(self.aios.health()["status"], "ok")
         self.assertEqual(self.aios.version()["api_version"], 1)
 
+    def test_config(self):
+        cfg = self.aios.config()
+        self.assertIn("model", cfg)
+        self.assertNotIn("token", cfg)  # secret never exposed
+
     def test_ask_returns_chat_result(self):
         r = self.aios.ask("ping")
         self.assertIsInstance(r, ChatResult)

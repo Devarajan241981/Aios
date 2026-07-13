@@ -59,6 +59,10 @@ class AIOSClient:
     def version(self) -> dict:
         return self._request("GET", "/version")
 
+    def config(self) -> dict:
+        """Sanitized effective settings (operations plane; token never returned)."""
+        return self._request("GET", "/config")
+
     # -- chat -------------------------------------------------------------
     def ask(self, prompt: str, *, session: str | None = None, history=None,
             use_tools: bool = False, approve: bool = False,

@@ -20,12 +20,10 @@ import sys
 import urllib.error
 import urllib.request
 
-HOST = os.environ.get("AIOS_HOST", "127.0.0.1")
-PORT = os.environ.get("AIOS_PORT", "8765")
-
-
 def base_url() -> str:
-    return f"http://{HOST}:{PORT}"
+    host = os.environ.get("AIOS_HOST", "127.0.0.1")
+    port = os.environ.get("AIOS_PORT", "8765")
+    return f"http://{host}:{port}"
 
 
 def _headers() -> dict:

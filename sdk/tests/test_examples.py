@@ -27,7 +27,8 @@ class TestExamples(unittest.TestCase):
         cfg = Config.from_env({"AIOS_BACKEND": "mock", "AIOS_PORT": "0",
                                "AIOS_DB_PATH": ":memory:", "AIOS_AUDIT": "off",
                                "AIOS_NOTIFY_DESKTOP": "off",
-                               "AIOS_NOTIFICATIONS_PATH": os.path.join(cls.tmp.name, "n.json")})
+                               "AIOS_NOTIFICATIONS_PATH": os.path.join(cls.tmp.name, "n.json"),
+                               "AIOS_INDEX_PATH": os.path.join(cls.tmp.name, "index.json")})
         cls.httpd = build_server(cfg)
         port = cls.httpd.server_address[1]
         threading.Thread(target=cls.httpd.serve_forever, daemon=True).start()
