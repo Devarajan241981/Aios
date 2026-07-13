@@ -1,4 +1,5 @@
 import os
+import subprocess
 import tempfile
 import unittest
 
@@ -23,11 +24,24 @@ class StubServiceManager(NullServiceManager):
 
 
 class TestWrapper(unittest.TestCase):
-    def test_wrapper_runs_plain_ask(self):
-        w = wrapper_script("/usr/bin/aios", "hello 'world'", "/tmp/x.log")
-        self.assertIn("aios", w)
+    def test_wrapper_runs_ask_and_notifies(self):
+        w = wrapper_script("/usr/bin/aios", "digest", "hello 'world'", "/tmp/x.log")
         self.assertIn("ask", w)
         self.assertIn("/tmp/x.log", w)
+        self.assertIn("notify", w)             # notifies on completion
+        self.assertIn("--level success", w)
+        self.assertIn("--level error", w)
+
+    def test_generated_wrapper_is_valid_bash(self):
+        w = wrapper_script("/usr/bin/aios", "weird name", "prompt with 'quotes' and $x", "/tmp/y.log")
+        with tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False) as fh:
+            fh.write(w)
+            path = fh.name
+        try:
+            result = subprocess.run(["bash", "-n", path], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+        finally:
+            os.remove(path)
 
 
 class TestScheduler(unittest.TestCase):

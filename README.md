@@ -125,6 +125,9 @@ so a schedule can never mutate anything unattended):
 ./bin/aios schedule remove morning
 ```
 
+Each run **notifies you on completion** (in-app bell + desktop) with a snippet of
+the result — success, or an error notification if it failed.
+
 Run the tests (fully offline, no Ollama required):
 
 ```bash
