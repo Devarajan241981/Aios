@@ -13,8 +13,9 @@ run: ## Start aiosd with the real (Ollama) backend
 mock: ## Start aiosd with the offline mock backend
 	cd ai-core && AIOS_BACKEND=mock $(PY) -m aiosd
 
-test: ## Run the test suite (offline, no Ollama needed)
+test: ## Run the test suite (daemon + SDK; offline, no Ollama needed)
 	cd ai-core && $(PY) -m unittest discover -s tests -t . -v
+	cd sdk && $(PY) -m unittest discover -s tests -t . -v
 
 status: ## Query the running daemon's health
 	./bin/aios status
@@ -23,7 +24,7 @@ ask: ## Ask a one-off question: make ask Q="how do I ..."
 	./bin/aios ask "$(Q)"
 
 lint: ## Byte-compile all sources as a quick sanity check
-	$(PY) -m compileall -q ai-core/aiosd bin/aios
+	$(PY) -m compileall -q ai-core/aiosd bin/aios sdk/aios_sdk
 
 install: ## User-level install (CLI, daemon service, desktop session)
 	./scripts/install.sh

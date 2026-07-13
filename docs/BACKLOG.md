@@ -25,8 +25,9 @@ Only runnable on the target hardware; scripts/specs exist, execution is yours.
 - [ ] **Compositor / window-manager seam** (matrix #15) — own the *shell
       protocol/policy*; keep wlroots as a library provider. Do **not** write a
       compositor from scratch (ADR-0003 challenge).
-- [ ] **UI toolkit / SDK** (matrix #17/#22) — an AIOS SDK + bindings over the
-      frozen Platform API v1; publish for third-party apps.
+- [x] **AIOS SDK** (matrix #22) — zero-dependency Python client over Platform API
+      v1 (`sdk/aios_sdk`, ADR-0014). Remaining: more language bindings.
+- [ ] **UI toolkit** (matrix #17) — an AIOS UI toolkit beyond the web UI.
 - [ ] **Native file manager** (matrix #21) — an app over the Platform API.
 - [ ] **Settings service** (matrix #7) — an AIOS settings surface over config.
 - [ ] **Session/login greeter** (matrix #16) — `greetd`-based AIOS greeter behind

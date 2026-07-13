@@ -256,6 +256,22 @@ terminal: `aios overlay`. **`Super+D`** opens an app launcher (wofi/fuzzel/bemen
 The bring-up scripts and session config are written and syntax-checked here; the
 final run happens on the M4. Full guide: [docs/asahi-bringup.md](docs/asahi-bringup.md).
 
+## Build on AIOS (SDK)
+
+Apps target the **AIOS Platform API v1** through a zero-dependency Python client —
+not raw HTTP, and with no knowledge of the host OS:
+
+```python
+from aios_sdk import AIOSClient
+aios = AIOSClient()
+print(aios.ask("summarize my notes").reply)
+for delta in aios.stream("write a haiku"):
+    print(delta, end="")
+```
+
+See [sdk/README.md](sdk/README.md). The API contract it targets is frozen and
+documented at [docs/architecture/04-platform-api-v1.md](docs/architecture/04-platform-api-v1.md).
+
 ## License
 
 MIT — see [LICENSE](LICENSE). All dependencies are stdlib-only.

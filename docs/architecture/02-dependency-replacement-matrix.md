@@ -39,7 +39,7 @@ Hardware → [AKI] → Kernel(Linux) → [HAL] → System services (AIOS) → [P
 | 19 | Package manager | Install software | **`PackageManager` interface** (ours) — `aiosd/packages.py`; [ADR-0012](../decisions/0012-package-manager-seam.md) | 🟡 `FlatpakPackageManager` (parsing/degradation tested; exec on Linux) | Medium | AIOS package/store service | 2 |
 | 20 | Update system | Ship updates | **`UpdateManager` interface** (ours) — `aiosd/update.py`; [ADR-0011](../decisions/0011-update-manager-seam.md) | 🟡 `GitUpdateManager` (git checkout — current stage) | Medium | AIOS atomic/image updates (ostree-style) | 2 |
 | 21 | File manager | Browse files | app over Platform API | ⬜ none | Low | AIOS file manager | 2 |
-| 22 | Developer SDK | Third-party apps | AIOS SDK (over Platform API) | 🟡 the API exists | Medium | AIOS SDK + language bindings | 2 |
+| 22 | Developer SDK | Third-party apps | **AIOS SDK** (ours) — `sdk/aios_sdk`; [ADR-0014](../decisions/0014-aios-sdk.md) | ✅ Python SDK over Platform API v1 | Low | more language bindings | 2 |
 | 23 | IPC transport | Service ↔ app | **`Transport` interface** (ours) — `aiosd/transport.py` | 🟡 TCP-HTTP **+ Unix-socket-HTTP** behind it | Medium | AIOS IPC (message ports) | 2–3 |
 | 24 | **Kernel** | Hardware, processes, VM | **AKI** (ours) | ⬜ Linux (Asahi) | Extreme | AIOS capability microkernel | 3 |
 | 25 | Bootloader | Bring-up | boot protocol | ⬜ m1n1/U-Boot (open) | High | keep m1n1 / AIOS boot | 3 |
