@@ -33,7 +33,7 @@ Hardware → [AKI] → Kernel(Linux) → [HAL] → System services (AIOS) → [P
 | 13 | Shell (CLI) | Human/automation entry | `aios` (ours) | ✅ ours (+ bash for scripts) | Low | AIOS shell | 1–2 |
 | 14 | Desktop shell (panel/overlay/launcher) | The UX identity | shell components (ours) | 🟡 swaybar/web/scripts | Low–Med | native AIOS shell | 2 |
 | 15 | Compositor / WM | Draw & manage windows | `Compositor` seam + AIOS shell protocol | ⬜ Sway (wlroots) | High | AIOS compositor (wlroots-as-lib → own) | 2–3 |
-| 16 | Session / login | Start a user session | `SessionManager` seam *(to define)* | ⬜ greetd/DM + `aios-session` | Medium | AIOS greeter | 2 |
+| 16 | Session / login | Start a user session | **`SessionManager` interface** (ours) — `aiosd/session.py`; [ADR-0013](../decisions/0013-session-manager-seam.md) | 🟡 `GreetdSessionManager` (config gen tested; wiring on Linux) + `aios-session` | Medium | AIOS greeter | 2 |
 | 17 | UI toolkit | Build interfaces | AIOS UI / SDK | 🟡 web (HTML/CSS, ours) | Medium | AIOS UI toolkit | 2 |
 | 18 | Notification center | System messaging | **`NotificationCenter` + `NotificationChannel`** (ours) — `aiosd/notifications.py`; [ADR-0010](../decisions/0010-notification-center.md) | ✅ AIOS service; 🟡 `DesktopChannel` (notify-send) behind the channel seam | Low | AIOS notification daemon | 2 |
 | 19 | Package manager | Install software | **`PackageManager` interface** (ours) — `aiosd/packages.py`; [ADR-0012](../decisions/0012-package-manager-seam.md) | 🟡 `FlatpakPackageManager` (parsing/degradation tested; exec on Linux) | Medium | AIOS package/store service | 2 |

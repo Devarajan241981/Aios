@@ -425,6 +425,19 @@ def cmd_schedule_remove(args) -> int:
     return 0 if ok else 1
 
 
+def cmd_session(args) -> int:
+    here = os.path.dirname(os.path.realpath(__file__))
+    core = os.path.join(os.path.dirname(here), "ai-core")
+    if os.path.isdir(core) and core not in sys.path:
+        sys.path.insert(0, core)
+    from aiosd.session import make_session_manager
+    sm = make_session_manager(greeter=args.greeter)
+    print(f"# AIOS login session — launches: {sm.session_command()}")
+    print("# Install greetd, then write the following to /etc/greetd/config.toml (root):\n")
+    print(sm.greeter_config(autologin_user=args.autologin), end="")
+    return 0
+
+
 def _package_manager():
     here = os.path.dirname(os.path.realpath(__file__))
     core = os.path.join(os.path.dirname(here), "ai-core")
@@ -650,6 +663,11 @@ def main(argv=None) -> int:
     update.add_argument("--apply", action="store_true", help="fast-forward to the latest")
     update.add_argument("--branch", default="main", help="branch to track (default main)")
     update.set_defaults(func=cmd_update)
+
+    session = sub.add_parser("session", help="print the AIOS greetd login config")
+    session.add_argument("--greeter", default="tuigreet", help="greeter binary (default tuigreet)")
+    session.add_argument("--autologin", help="username to auto-login (single-user machine)")
+    session.set_defaults(func=cmd_session)
 
     apps = sub.add_parser("apps", help="apps (Flatpak): list/search/install/remove")
     apps.set_defaults(func=cmd_apps_list)

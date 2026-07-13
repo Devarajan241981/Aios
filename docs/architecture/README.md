@@ -31,7 +31,8 @@ Decision records: [0003](../decisions/0003-layered-architecture-and-hal.md)
 (inference seam), [0010](../decisions/0010-notification-center.md)
 (notification center), [0011](../decisions/0011-update-manager-seam.md)
 (UpdateManager seam), [0012](../decisions/0012-package-manager-seam.md)
-(PackageManager seam). Earlier:
+(PackageManager seam), [0013](../decisions/0013-session-manager-seam.md)
+(SessionManager seam). Earlier:
 [0001](../decisions/0001-scope-and-strategy.md),
 [0002](../decisions/0002-tools-safety.md).
 

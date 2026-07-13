@@ -59,6 +59,20 @@ directly from a TTY:
 aios-session
 ```
 
+### Optional: an AIOS-owned login with greetd
+
+For a minimal, AIOS-native login (instead of GDM), install **greetd** + a greeter
+(e.g. `tuigreet`) and generate the config:
+
+```bash
+sudo dnf install -y greetd tuigreet          # or your distro's packages
+aios session --autologin "$USER" | sudo tee /etc/greetd/config.toml
+sudo systemctl enable --now greetd
+```
+
+`aios session` prints a greetd config that launches `aios-session` (drop
+`--autologin` to show a login prompt instead of auto-logging-in).
+
 Sway starts, ensures `aiosd` is running, and launches the web UI fullscreen as
 the shell. `Super+Return` opens a terminal; `Super+Shift+e` exits the session.
 
