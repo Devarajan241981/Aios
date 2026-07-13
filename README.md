@@ -124,6 +124,16 @@ only fast-forwards):
 ./bin/aios update --apply    # fast-forward to it, then restart the daemon
 ```
 
+Manage apps via Flatpak on the Linux target (on macOS these report that Flatpak
+isn't installed):
+
+```bash
+./bin/aios apps                       # list installed
+./bin/aios apps search text editor
+./bin/aios apps install org.gnome.TextEditor
+./bin/aios apps remove org.gnome.TextEditor
+```
+
 Schedule a prompt to run on a timer (systemd user timers; runs plain `aios ask`
 so a schedule can never mutate anything unattended):
 

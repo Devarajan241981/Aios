@@ -425,6 +425,54 @@ def cmd_schedule_remove(args) -> int:
     return 0 if ok else 1
 
 
+def _package_manager():
+    here = os.path.dirname(os.path.realpath(__file__))
+    core = os.path.join(os.path.dirname(here), "ai-core")
+    if os.path.isdir(core) and core not in sys.path:
+        sys.path.insert(0, core)
+    from aiosd.packages import make_package_manager
+    return make_package_manager()
+
+
+def cmd_apps_list(_args) -> int:
+    res = _package_manager().list_installed()
+    if not res.get("ok"):
+        print(res.get("error", "error"), file=sys.stderr)
+        return 1
+    apps = res["apps"]
+    if not apps:
+        print("no apps installed")
+        return 0
+    for a in apps:
+        print(f"{a['id']:<40} {a.get('version', ''):<10} {a.get('name', '')}")
+    return 0
+
+
+def cmd_apps_search(args) -> int:
+    res = _package_manager().search(" ".join(args.query))
+    if not res.get("ok"):
+        print(res.get("error", "error"), file=sys.stderr)
+        return 1
+    for r in res["results"]:
+        print(f"{r['id']:<40} {r.get('name', '')} — {r.get('description', '')}")
+    return 0
+
+
+def cmd_apps_install(args) -> int:
+    print(f"installing {args.app_id}… (this may download from {'flathub'})")
+    res = _package_manager().install(args.app_id)
+    print(f"installed {args.app_id}" if res.get("ok") else res.get("error", "error"),
+          file=sys.stderr if not res.get("ok") else sys.stdout)
+    return 0 if res.get("ok") else 1
+
+
+def cmd_apps_remove(args) -> int:
+    res = _package_manager().remove(args.app_id)
+    print(f"removed {args.app_id}" if res.get("ok") else res.get("error", "error"),
+          file=sys.stderr if not res.get("ok") else sys.stdout)
+    return 0 if res.get("ok") else 1
+
+
 def cmd_update(args) -> int:
     here = os.path.dirname(os.path.realpath(__file__))
     core = os.path.join(os.path.dirname(here), "ai-core")
@@ -602,6 +650,19 @@ def main(argv=None) -> int:
     update.add_argument("--apply", action="store_true", help="fast-forward to the latest")
     update.add_argument("--branch", default="main", help="branch to track (default main)")
     update.set_defaults(func=cmd_update)
+
+    apps = sub.add_parser("apps", help="apps (Flatpak): list/search/install/remove")
+    apps.set_defaults(func=cmd_apps_list)
+    appssub = apps.add_subparsers(dest="appscmd")
+    asearch = appssub.add_parser("search", help="search for apps")
+    asearch.add_argument("query", nargs="+")
+    asearch.set_defaults(func=cmd_apps_search)
+    ainstall = appssub.add_parser("install", help="install an app")
+    ainstall.add_argument("app_id")
+    ainstall.set_defaults(func=cmd_apps_install)
+    aremove = appssub.add_parser("remove", help="remove an app")
+    aremove.add_argument("app_id")
+    aremove.set_defaults(func=cmd_apps_remove)
 
     schedule = sub.add_parser("schedule", help="scheduled automations (systemd timers)")
     ssub = schedule.add_subparsers(dest="subcmd", required=True)
