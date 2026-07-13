@@ -269,8 +269,12 @@ for delta in aios.stream("write a haiku"):
     print(delta, end="")
 ```
 
-See [sdk/README.md](sdk/README.md). The API contract it targets is frozen and
-documented at [docs/architecture/04-platform-api-v1.md](docs/architecture/04-platform-api-v1.md).
+See [sdk/README.md](sdk/README.md) and runnable [examples/](examples/). The API
+contract it targets is frozen and documented at
+[docs/architecture/04-platform-api-v1.md](docs/architecture/04-platform-api-v1.md).
+
+Contributing? Start with **[CONTRIBUTING.md](CONTRIBUTING.md)** and the
+[Engineering Constitution](docs/architecture/00-engineering-constitution.md).
 
 ## License
 

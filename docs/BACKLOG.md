@@ -50,8 +50,13 @@ Only runnable on the target hardware; scripts/specs exist, execution is yours.
 
 ## D. Polish & maintainability (doable here anytime)
 
-- [ ] `CONTRIBUTING.md` + an architecture onboarding guide (make the 10-year
-      project maintainable by others).
+- [x] `CONTRIBUTING.md` + onboarding guide (the seam pattern, Constitution,
+      layout, conventions).
+- [x] `examples/` — small SDK apps, tested against a real daemon.
+- [ ] Refactor `bin/aios` onto the SDK (dogfood; remove duplicated HTTP code).
+      *Deferred deliberately:* churning working, shipped code for consistency
+      carries regression risk with no CLI test net — do it together with adding
+      CLI tests, not before.
 - [ ] More notification channels (e.g. native AIOS toast on our compositor).
 - [ ] Streaming for tool-using chat responses.
 - [ ] Encrypt the semantic index / audit / notifications at rest.
